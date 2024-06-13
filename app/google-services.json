@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "44482293271",
-    "project_id": "darkmovies-5fd90",
-    "storage_bucket": "darkmovies-5fd90.appspot.com"
+    "project_number": "866726290984",
+    "project_id": "darkmovies-78bad",
+    "storage_bucket": "darkmovies-78bad.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:44482293271:android:d07d8aa997359493b47652",
+        "mobilesdk_app_id": "1:866726290984:android:e2c22fd888baea088bf71d",
         "android_client_info": {
           "package_name": "com.guido.darkmovies"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCajcC2okzvJXrdFdKz7-dmUCFX8zKmwSM"
+          "current_key": "AIzaSyBzENqFKS148os_mTmxxA1DkxNskB_m5D0"
         }
       ],
       "services": {

@@ -3,13 +3,17 @@ package com.guido.darkmovies
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -29,7 +33,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(navController = navController, startDestination = "main_screen") {
                         composable("main_screen") { MainScreen(navController) }
-                        composable("otra_pantalla") { OtraPantalla() }
+                        composable("detail_screen") { DetailScreen() }
                     }
                 }
             }
@@ -40,16 +44,26 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(navController: NavHostController) {
-    Text(
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ){
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher_background),
+            contentDescription = "Descripción de la imagen",
+            modifier = Modifier
+                .size(100.dp)
+        )
+    }
+    /* Text(
         text = "Android",
         modifier = Modifier
             .fillMaxSize()
             .clickable { navController.navigate("otra_pantalla") }
-    )
+    ) */
 }
 
 @Composable
-fun OtraPantalla() {
+fun DetailScreen() {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
