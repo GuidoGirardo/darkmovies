@@ -74,4 +74,6 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-storage")
+    // glide
+    implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
 }
