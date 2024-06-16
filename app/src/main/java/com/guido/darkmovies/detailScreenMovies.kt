@@ -7,7 +7,7 @@ data class MovieDetail(
     val titulo: String,
     val descripcion: String?,
     val portada: String?,
-    val video: String?
+    val videos: String?
 )
 
 suspend fun detailScreenMovies(titulo: String): MovieDetail? {
@@ -21,8 +21,8 @@ suspend fun detailScreenMovies(titulo: String): MovieDetail? {
             val document = querySnapshot.documents.first()
             val descripcion = document.getString("descripcion")
             val portada = document.getString("portada")
-            val video = document.getString("video")
-            MovieDetail(titulo, descripcion, portada, video)
+            val videos = document.getString("videos")
+            MovieDetail(titulo, descripcion, portada, videos)
         } else {
             null
         }
