@@ -45,7 +45,6 @@ import com.guido.darkmovies.ui.theme.DarkmoviesTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
             DarkmoviesTheme {
                 val navController = rememberNavController()
@@ -56,11 +55,24 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(navController = navController, startDestination = "main_screen") {
                         composable("main_screen") { MainScreen(navController) }
-                        composable("detail_screen/{titulo}", arguments = listOf(navArgument("titulo") {defaultValue = ""})){
-                            backStackEntry -> DetailScreen(navController, backStackEntry.arguments?.getString("titulo") ?: "")
+                        composable(
+                            "detail_screen/{titulo}",
+                            arguments = listOf(navArgument("titulo") { defaultValue = "" })
+                        ) { backStackEntry ->
+                            DetailScreen(
+                                navController,
+                                backStackEntry.arguments?.getString("titulo") ?: ""
+                            )
                         }
-                        composable("video_screen/{videos}", arguments = listOf(navArgument("videos") {defaultValue = ""})){
-                                backStackEntry -> VideoScreen(navController, backStackEntry.arguments?.getString("videos") ?: "", context = context)
+                        composable(
+                            "video_screen/{videos}",
+                            arguments = listOf(navArgument("videos") { defaultValue = "" })
+                        ) { backStackEntry ->
+                            VideoScreen(
+                                navController,
+                                backStackEntry.arguments?.getString("videos") ?: "",
+                                context = context
+                            )
                         }
                     }
                 }
@@ -76,7 +88,6 @@ fun MainScreen(navController: NavHostController) {
     LaunchedEffect(Unit) {
         mainScreenPortadasTitulos(movies)
     }
-
     LazyRow{
         items(movies) { movie ->
             Column(
@@ -99,7 +110,6 @@ fun MainScreen(navController: NavHostController) {
 @Composable
 fun DetailScreen(navController: NavHostController, titulo: String) {
     val movieDetail = remember { mutableStateOf<MovieDetail?>(null) }
-
     LaunchedEffect(titulo) {
         movieDetail.value = detailScreenMovies(titulo)
     }
@@ -116,7 +126,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
             Text(movie.videos ?: "")
             Button(onClick = {
                 navController.navigate("video_screen/${Uri.encode(movie.videos)}")
-            }){
+            }) {
                 Text("watch")
             }
         }
@@ -126,7 +136,6 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
 @Composable
 fun VideoScreen(navController: NavHostController, videos: String, context: Context) {
     val activity = LocalContext.current as ComponentActivity
-
     DisposableEffect(Unit) {
         activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         onDispose {
@@ -146,7 +155,6 @@ fun VideoScreen(navController: NavHostController, videos: String, context: Conte
 fun VideoPlayer(context: Context, videos: String) {
     val mediaController = remember { MediaController(context) }
     var position by rememberSaveable { mutableStateOf(0) }
-
     AndroidView(
         factory = { ctx ->
             VideoView(ctx).apply {
