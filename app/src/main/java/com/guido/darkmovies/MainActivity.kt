@@ -35,6 +35,11 @@ import androidx.navigation.navArgument
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import android.content.Context
+import android.content.pm.ActivityInfo
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import com.guido.darkmovies.ui.theme.DarkmoviesTheme
 
 class MainActivity : ComponentActivity() {
@@ -110,7 +115,6 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
             Text(text = movie.descripcion ?: "")
             Text(movie.videos ?: "")
             Button(onClick = {
-                // capaz habría que encodear movie.videos a utf-8 para que no de error
                 navController.navigate("video_screen/${Uri.encode(movie.videos)}")
             }){
                 Text("watch")
@@ -121,6 +125,15 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
 
 @Composable
 fun VideoScreen(navController: NavHostController, videos: String, context: Context) {
+    val activity = LocalContext.current as ComponentActivity
+
+    DisposableEffect(Unit) {
+        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        onDispose {
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -132,12 +145,28 @@ fun VideoScreen(navController: NavHostController, videos: String, context: Conte
 @Composable
 fun VideoPlayer(context: Context, videos: String) {
     val mediaController = remember { MediaController(context) }
+    var position by rememberSaveable { mutableStateOf(0) }
 
-    AndroidView(factory = { ctx ->
-        VideoView(ctx).apply {
-            setVideoPath(videos)
-            setMediaController(mediaController)
-            start()
+    AndroidView(
+        factory = { ctx ->
+            VideoView(ctx).apply {
+                setVideoPath(videos)
+                setMediaController(mediaController)
+                setOnPreparedListener { mediaPlayer ->
+                    mediaPlayer.seekTo(position)
+                    start()
+                }
+            }
+        },
+        update = { view ->
+            view.setOnPreparedListener { mediaPlayer ->
+                mediaPlayer.seekTo(position)
+                mediaPlayer.start()
+            }
+        },
+        onRelease = {
+            it.pause()
+            position = it.currentPosition
         }
-    })
+    )
 }
