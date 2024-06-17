@@ -39,11 +39,14 @@ import android.content.pm.ActivityInfo
 import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.TextFieldValue
 import com.guido.darkmovies.ui.theme.DarkmoviesTheme
 
 class MainActivity : ComponentActivity() {
@@ -94,11 +97,18 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(navController: NavHostController, context: Context) {
     val movies = remember { mutableStateListOf<MoviesMainScreen>() }
     val moviesVistas = remember { mutableStateListOf<MovieWithTitleAndPortada>() }
+    val searchTerm = remember { mutableStateOf(TextFieldValue()) }
     LaunchedEffect(Unit) {
         mainScreenPortadasTitulos(movies)
         fetchMoviesFromFirestoreByTitles(context, moviesVistas)
     }
     Column() {
+        TextField(
+            value = searchTerm.value,
+            onValueChange = { searchTerm.value = it },
+            label = { Text("Search by movie title") },
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(modifier = Modifier.height(10.dp))
         Text("Continue wacthing :)")
         LazyRow {
@@ -119,7 +129,10 @@ fun MainScreen(navController: NavHostController, context: Context) {
         }
         Spacer(modifier = Modifier.height(40.dp))
         LazyRow {
-            items(movies) { movie ->
+            val filteredMovies = movies.filter {
+                it.titulo.contains(searchTerm.value.text, ignoreCase = true)
+            }
+            items(filteredMovies) { movie ->
                 Column(
                     modifier = Modifier.clickable {
                         navController.navigate("detail_screen/${movie.titulo}")
