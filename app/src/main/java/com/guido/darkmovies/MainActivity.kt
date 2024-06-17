@@ -36,6 +36,10 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.util.Log
+import android.view.KeyEvent
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -54,7 +58,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     NavHost(navController = navController, startDestination = "main_screen") {
-                        composable("main_screen") { MainScreen(navController) }
+                        composable("main_screen") { MainScreen(navController, context) }
                         composable(
                             "detail_screen/{titulo}",
                             arguments = listOf(navArgument("titulo") { defaultValue = "" })
@@ -65,14 +69,18 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(
-                            "video_screen/{videos}",
-                            arguments = listOf(navArgument("videos") { defaultValue = "" })
+                            "video_screen/{videos}/{titulo}",
+                            arguments = listOf(
+                                navArgument("videos") { defaultValue = "" },
+                                navArgument("titulo") { defaultValue = "" }
+                            )
                         ) { backStackEntry ->
                             VideoScreen(
                                 navController,
                                 backStackEntry.arguments?.getString("videos") ?: "",
-                                context = context
-                            )
+                                context = context,
+                                backStackEntry.arguments?.getString("titulo") ?: "",
+                                )
                         }
                     }
                 }
@@ -83,24 +91,47 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun MainScreen(navController: NavHostController) {
+fun MainScreen(navController: NavHostController, context: Context) {
     val movies = remember { mutableStateListOf<MoviesMainScreen>() }
+    val moviesVistas = remember { mutableStateListOf<MovieWithTitleAndPortada>() }
     LaunchedEffect(Unit) {
         mainScreenPortadasTitulos(movies)
+        fetchMoviesFromFirestoreByTitles(context, moviesVistas)
     }
-    LazyRow{
-        items(movies) { movie ->
-            Column(
-                modifier = Modifier.clickable{
-                    navController.navigate("detail_screen/${movie.titulo}")
+    Column() {
+        Spacer(modifier = Modifier.height(10.dp))
+        Text("Continue wacthing :)")
+        LazyRow {
+            items(moviesVistas) { movie ->
+                Column(
+                    modifier = Modifier.clickable {
+                        navController.navigate("detail_screen/${movie.titulo}")
+                    }
+                ) {
+                    GlideImage(
+                        model = movie.portada,
+                        contentDescription = "portada",
+                        modifier = Modifier.width(80.dp)
+                    )
+                    Text(movie.titulo)
                 }
-            ){
-                GlideImage(
-                    model = movie.portada,
-                    contentDescription = "portada",
-                    modifier = Modifier.width(80.dp)
-                )
-                Text(movie.titulo)
+            }
+        }
+        Spacer(modifier = Modifier.height(40.dp))
+        LazyRow {
+            items(movies) { movie ->
+                Column(
+                    modifier = Modifier.clickable {
+                        navController.navigate("detail_screen/${movie.titulo}")
+                    }
+                ) {
+                    GlideImage(
+                        model = movie.portada,
+                        contentDescription = "portada",
+                        modifier = Modifier.width(80.dp)
+                    )
+                    Text(movie.titulo)
+                }
             }
         }
     }
@@ -125,7 +156,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
             Text(text = movie.descripcion ?: "")
             Text(movie.videos ?: "")
             Button(onClick = {
-                navController.navigate("video_screen/${Uri.encode(movie.videos)}")
+                navController.navigate("video_screen/${Uri.encode(movie.videos)}/${movie.titulo}")
             }) {
                 Text("watch")
             }
@@ -134,12 +165,28 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
 }
 
 @Composable
-fun VideoScreen(navController: NavHostController, videos: String, context: Context) {
+fun VideoScreen(navController: NavHostController, videos: String, context: Context, titulo: String) {
     val activity = LocalContext.current as ComponentActivity
+    val sharedPreferences = activity.getSharedPreferences("video_position", Context.MODE_PRIVATE)
+
+    val videoPlayerState = remember {
+        VideoPlayerState(
+            sharedPreferences.getInt(titulo, 0)
+        )
+    }
+
     DisposableEffect(Unit) {
         activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+
         onDispose {
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
+            // Guardar el tiempo actual de reproducción del video al salir
+            with(sharedPreferences.edit()) {
+                putInt(titulo, videoPlayerState.currentPosition)
+                Log.i("sp", videoPlayerState.currentPosition.toString())
+                apply()
+            }
         }
     }
 
@@ -147,34 +194,55 @@ fun VideoScreen(navController: NavHostController, videos: String, context: Conte
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        VideoPlayer(context = context, videos = videos)
+        VideoPlayer(context = context, videos = videos, titulo = titulo, videoPlayerState = videoPlayerState)
     }
 }
 
+
+class VideoPlayerState(initialPosition: Int) {
+    var currentPosition by mutableStateOf(initialPosition)
+}
+
 @Composable
-fun VideoPlayer(context: Context, videos: String) {
+fun VideoPlayer(context: Context, videos: String, titulo: String, videoPlayerState: VideoPlayerState) {
     val mediaController = remember { MediaController(context) }
-    var position by rememberSaveable { mutableStateOf(0) }
+
     AndroidView(
         factory = { ctx ->
             VideoView(ctx).apply {
                 setVideoPath(videos)
                 setMediaController(mediaController)
                 setOnPreparedListener { mediaPlayer ->
-                    mediaPlayer.seekTo(position)
+                    mediaPlayer.seekTo(videoPlayerState.currentPosition)
                     start()
+                }
+
+                setOnKeyListener { _, keyCode, _ ->
+                    if (keyCode == KeyEvent.KEYCODE_BACK) {
+                        videoPlayerState.currentPosition = currentPosition
+                    }
+                    false
                 }
             }
         },
         update = { view ->
             view.setOnPreparedListener { mediaPlayer ->
-                mediaPlayer.seekTo(position)
+                mediaPlayer.seekTo(videoPlayerState.currentPosition)
                 mediaPlayer.start()
             }
-        },
-        onRelease = {
-            it.pause()
-            position = it.currentPosition
         }
     )
+
+    DisposableEffect(Unit) {
+        val videoView = VideoView(context)
+        videoView.setVideoPath(videos)
+        videoView.setOnPreparedListener { mediaPlayer ->
+            mediaPlayer.seekTo(videoPlayerState.currentPosition)
+            mediaPlayer.start()
+        }
+
+        onDispose {
+            videoView.stopPlayback()
+        }
+    }
 }
