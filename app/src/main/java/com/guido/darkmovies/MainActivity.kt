@@ -167,11 +167,12 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
             )
             Text(text = movie.titulo)
             Text(text = movie.descripcion ?: "")
-            Text(movie.videos ?: "")
-            Button(onClick = {
-                navController.navigate("video_screen/${Uri.encode(movie.videos)}/${movie.titulo}")
-            }) {
-                Text("watch")
+            movie.videos?.forEach { (key, value) ->
+                Button(onClick = {
+                    navController.navigate("video_screen/${Uri.encode(value)}/${movie.titulo}")
+                }) {
+                    Text("watch $key")
+                }
             }
         }
     }
