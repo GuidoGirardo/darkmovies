@@ -38,13 +38,13 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.util.Log
 import android.view.KeyEvent
+import android.view.MotionEvent
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.TextFieldValue
 import com.guido.darkmovies.ui.theme.DarkmoviesTheme
@@ -212,7 +212,6 @@ fun VideoScreen(navController: NavHostController, videos: String, context: Conte
     }
 }
 
-
 class VideoPlayerState(initialPosition: Int) {
     var currentPosition by mutableStateOf(initialPosition)
 }
@@ -231,12 +230,32 @@ fun VideoPlayer(context: Context, videos: String, titulo: String, videoPlayerSta
                     start()
                 }
 
-                setOnKeyListener { _, keyCode, _ ->
-                    if (keyCode == KeyEvent.KEYCODE_BACK) {
-                        videoPlayerState.currentPosition = currentPosition
+                setOnTouchListener { _, motionEvent ->
+                    when (motionEvent.action) {
+                        MotionEvent.ACTION_DOWN -> {
+                            videoPlayerState.currentPosition = currentPosition
+                            val sharedPreferences = context.getSharedPreferences("video_position", Context.MODE_PRIVATE)
+                            with(sharedPreferences.edit()) {
+                                putInt(titulo, videoPlayerState.currentPosition)
+                                Log.i("sp", videoPlayerState.currentPosition.toString())
+                                apply()
+                            }
+                            false
+                        }
+                        else -> false
                     }
-                    false
                 }
+
+                setOnKeyListener { _, keyCode, _ ->
+                    when (keyCode) {
+                        KeyEvent.KEYCODE_BACK -> {
+                            videoPlayerState.currentPosition = currentPosition
+                            false
+                        }
+                        else -> false
+                    }
+                }
+
             }
         },
         update = { view ->
