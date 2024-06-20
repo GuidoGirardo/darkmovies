@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,6 +25,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -150,6 +152,13 @@ fun MainScreen(navController: NavHostController, context: Context) {
 fun DetailScreen(navController: NavHostController, titulo: String) {
     val detail = remember { mutableStateOf<Any?>(null) }
     var selectedLanguage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("episode_prefs", Context.MODE_PRIVATE)
+
+    // Load last clicked episode from shared preferences
+    var lastClickedEpisode by remember {
+        mutableStateOf(sharedPreferences.getString("$titulo-lastClickedEpisode", ""))
+    }
 
     LaunchedEffect(titulo) {
         val fetchedDetail = detailScreenMovies(titulo)
@@ -216,11 +225,23 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                 }
                                 Text(text = "Temporada $seasonNumber:")
                                 episodesMap.forEach { (episodeNumber, episodeLink) ->
-                                    Button(onClick = {
-                                        navController.navigate(
-                                            "video_screen/${Uri.encode(episodeLink)}/$titulo/true/$seasonNumber/$episodeNumber"
+                                    val episodeKey = "$seasonNumber-$episodeNumber"
+                                    Button(
+                                        onClick = {
+                                            navController.navigate(
+                                                "video_screen/${Uri.encode(episodeLink)}/$titulo/true/$seasonNumber/$episodeNumber"
+                                            )
+                                            // Update last clicked episode
+                                            lastClickedEpisode = episodeKey
+                                            with(sharedPreferences.edit()) {
+                                                putString("$titulo-lastClickedEpisode", episodeKey)
+                                                apply()
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (lastClickedEpisode == episodeKey) Color.Green else Color.Gray
                                         )
-                                    }) {
+                                    ) {
                                         Text("Ver Episodio $episodeNumber")
                                     }
                                 }
