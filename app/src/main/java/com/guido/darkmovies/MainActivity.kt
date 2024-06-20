@@ -1,7 +1,6 @@
 package com.guido.darkmovies
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
@@ -14,6 +13,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -61,11 +61,12 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(
-                            "video_screen/{videos}/{titulo}/{isSeries}/{episodeKey}",
+                            "video_screen/{videos}/{titulo}/{isSeries}/{seasonNumber}/{episodeKey}",
                             arguments = listOf(
                                 navArgument("videos") { defaultValue = "" },
                                 navArgument("titulo") { defaultValue = "" },
                                 navArgument("isSeries") { defaultValue = false },
+                                navArgument("seasonNumber") { defaultValue = "" },
                                 navArgument("episodeKey") { defaultValue = "" }
                             )
                         ) { backStackEntry ->
@@ -75,6 +76,7 @@ class MainActivity : ComponentActivity() {
                                 context = context,
                                 backStackEntry.arguments?.getString("titulo") ?: "",
                                 isSeries = backStackEntry.arguments?.getBoolean("isSeries") ?: false,
+                                seasonNumber = (backStackEntry.arguments?.getBoolean("seasonNumber") ?: "").toString(),
                                 episodeKey = backStackEntry.arguments?.getString("episodeKey") ?: ""
                             )
                         }
@@ -151,42 +153,59 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
         detail.value = detailScreenMovies(titulo)
     }
 
-    Column {
+    LazyColumn {
         when (val content = detail.value) {
             is MovieDetail -> {
-                content.apply {
-                    GlideImage(
-                        model = portada ?: "",
-                        contentDescription = "portada",
-                        modifier = Modifier.width(200.dp)
-                    )
-                    Text(text = titulo)
-                    Text(text = descripcion ?: "")
-                    videos?.forEach { (key, value) ->
-                        Button(onClick = {
-                            navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0")
-                        }) {
-                            Text("watch $key")
+                item {
+                    content.apply {
+                        GlideImage(
+                            model = portada ?: "",
+                            contentDescription = "portada",
+                            modifier = Modifier.width(200.dp)
+                        )
+                        Text(text = titulo)
+                        Text(text = descripcion ?: "")
+                        videos?.forEach { (key, value) ->
+                            Button(onClick = {
+                                navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0/0")
+                            }) {
+                                Text("Ver $key")
+                            }
                         }
                     }
                 }
             }
             is SeriesDetail -> {
-                content.apply {
-                    GlideImage(
-                        model = portada ?: "",
-                        contentDescription = "portada",
-                        modifier = Modifier.width(200.dp)
-                    )
-                    Text(text = titulo)
-                    Text(text = descripcion ?: "")
-                    series?.forEach { (key, value) ->
-                        Column {
-                            value.forEach { (chapterKey, chapterLink) ->
-                                Button(onClick = {
-                                    navController.navigate("video_screen/${Uri.encode(chapterLink.toString())}/$titulo/true/$chapterKey")
-                                }) {
-                                    Text("Watch Episode $chapterKey")
+                item {
+                    content.apply {
+                        GlideImage(
+                            model = portada ?: "",
+                            contentDescription = "portada",
+                            modifier = Modifier.width(200.dp)
+                        )
+                        Text(text = titulo)
+                        Text(text = descripcion ?: "")
+                        Text(text = "Temporadas: $temporadas")
+
+                        // Mostrar los episodios por idioma y temporada
+                        series?.let { series ->
+                            series.forEach { (language, seasonMap) ->
+                                this@LazyColumn.item {
+                                    Text(text = "Idioma: $language")
+                                }
+                                seasonMap.forEach { (seasonNumber, episodesMap) ->
+                                    this@LazyColumn.item {
+                                        Text(text = "Temporada $seasonNumber:")
+                                    }
+                                    episodesMap.forEach { (episodeNumber, episodeLink) ->
+                                        this@LazyColumn.item {
+                                            Button(onClick = {
+                                                 navController.navigate("video_screen/${Uri.encode(episodeLink)}/$titulo/true/$seasonNumber/$episodeNumber")
+                                            }) {
+                                                Text("Ver Episodio $episodeNumber")
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -194,20 +213,34 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                 }
             }
             else -> {
-                Text("Loading...")
+                item {
+                    Text("Cargando...")
+                }
             }
         }
     }
 }
 
+
 @Composable
-fun VideoScreen(navController: NavHostController, videos: String, context: Context, titulo: String, isSeries: Boolean, episodeKey: String) {
+fun VideoScreen(
+    navController: NavHostController,
+    videos: String,
+    context: Context,
+    titulo: String,
+    isSeries: Boolean,
+    seasonNumber: String,
+    episodeKey: String
+) {
     val activity = LocalContext.current as ComponentActivity
     val sharedPreferences = activity.getSharedPreferences("video_position", Context.MODE_PRIVATE)
 
+    // Creamos una clave única para guardar y recuperar la posición del video
+    val videoPositionKey = getVideoPositionKey(titulo, isSeries, seasonNumber, episodeKey)
+
     val videoPlayerState = remember {
         VideoPlayerState(
-            sharedPreferences.getInt(getVideoPositionKey(titulo, isSeries, episodeKey), 0)
+            sharedPreferences.getInt(videoPositionKey, 0)
         )
     }
 
@@ -219,9 +252,9 @@ fun VideoScreen(navController: NavHostController, videos: String, context: Conte
 
             // Guardar el tiempo actual de reproducción del video al salir
             with(sharedPreferences.edit()) {
-                putInt(getVideoPositionKey(titulo, isSeries, episodeKey), videoPlayerState.currentPosition)
+                putInt(videoPositionKey, videoPlayerState.currentPosition)
                 apply()
-                Log.i("sp", "$titulo $episodeKey ${videoPlayerState.currentPosition}")
+                Log.i("sppp", "$titulo $seasonNumber $episodeKey ${videoPlayerState.currentPosition}")
             }
         }
     }
@@ -230,13 +263,13 @@ fun VideoScreen(navController: NavHostController, videos: String, context: Conte
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        VideoPlayer(context = context, videos = videos, titulo = titulo, videoPlayerState = videoPlayerState, isSeries = isSeries, episodeKey = episodeKey)
+        VideoPlayer(context = context, videos = videos, titulo = titulo, videoPlayerState = videoPlayerState, isSeries = isSeries, episodeKey = episodeKey, seasonNumber = seasonNumber)
     }
 }
 
-fun getVideoPositionKey(titulo: String, isSeries: Boolean, episodeKey: String = ""): String {
+fun getVideoPositionKey(titulo: String, isSeries: Boolean, seasonNumber: String, episodeKey: String): String {
     return if (isSeries) {
-        "$titulo-$episodeKey-episode"
+        "$titulo-season$seasonNumber-episode$episodeKey-video"
     } else {
         "$titulo-video"
     }
@@ -253,7 +286,8 @@ fun VideoPlayer(
     titulo: String,
     videoPlayerState: VideoPlayerState,
     isSeries: Boolean,
-    episodeKey: String
+    episodeKey: String,
+    seasonNumber: String
 ) {
     val mediaController = remember { MediaController(context) }
 
@@ -268,9 +302,9 @@ fun VideoPlayer(
                 videoPlayerState.currentPosition = videoView.currentPosition
                 val sharedPreferences = context.getSharedPreferences("video_position", Context.MODE_PRIVATE)
                 with(sharedPreferences.edit()) {
-                    putInt(getVideoPositionKey(titulo, isSeries, episodeKey), videoPlayerState.currentPosition)
+                    putInt(getVideoPositionKey(titulo, isSeries, seasonNumber, episodeKey), videoPlayerState.currentPosition)
                     apply()
-                    Log.i("sp", "$titulo $episodeKey ${videoPlayerState.currentPosition}")
+                    Log.i("sppp", "$titulo $episodeKey ${videoPlayerState.currentPosition}")
                 }
             }
         }
@@ -295,9 +329,9 @@ fun VideoPlayer(
                             videoPlayerState.currentPosition = currentPosition
                             val sharedPreferences = context.getSharedPreferences("video_position", Context.MODE_PRIVATE)
                             with(sharedPreferences.edit()) {
-                                putInt(getVideoPositionKey(titulo, isSeries, episodeKey), videoPlayerState.currentPosition)
+                                putInt(getVideoPositionKey(titulo, isSeries, seasonNumber, episodeKey), videoPlayerState.currentPosition)
                                 apply()
-                                Log.i("sp", "$titulo $episodeKey ${videoPlayerState.currentPosition}")
+                                Log.i("sppp", "$titulo $episodeKey ${videoPlayerState.currentPosition}")
                             }
                             false
                         }

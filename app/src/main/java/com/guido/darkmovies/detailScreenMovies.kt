@@ -14,7 +14,8 @@ data class SeriesDetail(
     val titulo: String,
     val descripcion: String?,
     val portada: String?,
-    val series: Map<String, Map<String, String>>?
+    val series: Map<String, Map<String, Map<String, String>>>?,
+    val temporadas: Int?
 )
 
 suspend fun detailScreenMovies(titulo: String): Any? {
@@ -30,12 +31,14 @@ suspend fun detailScreenMovies(titulo: String): Any? {
             val portada = document.getString("portada")
             val temporadas = document.getLong("temporadas")?.toInt()
 
-            if (temporadas != null && temporadas == 0) {
+            if (temporadas != null && temporadas > 0) {
+                // Es una serie
+                val videos = document.get("videos") as? Map<String, Map<String, Map<String, String>>>
+                SeriesDetail(titulo, descripcion, portada, videos, temporadas)
+            } else {
+                // Es una película
                 val videos = document.get("videos") as? Map<String, String>
                 MovieDetail(titulo, descripcion, portada, videos)
-            } else {
-                val series = document.get("videos") as? Map<String, Map<String, String>>
-                SeriesDetail(titulo, descripcion, portada, series)
             }
         } else {
             null
