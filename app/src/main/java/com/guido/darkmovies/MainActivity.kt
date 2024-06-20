@@ -36,6 +36,7 @@ import androidx.navigation.navArgument
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.guido.darkmovies.ui.theme.DarkmoviesTheme
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -246,8 +247,34 @@ class VideoPlayerState(initialPosition: Int) {
 }
 
 @Composable
-fun VideoPlayer(context: Context, videos: String, titulo: String, videoPlayerState: VideoPlayerState, isSeries: Boolean, episodeKey: String) {
+fun VideoPlayer(
+    context: Context,
+    videos: String,
+    titulo: String,
+    videoPlayerState: VideoPlayerState,
+    isSeries: Boolean,
+    episodeKey: String
+) {
     val mediaController = remember { MediaController(context) }
+
+    // A variable to store the VideoView instance
+    var videoViewInstance: VideoView? by remember { mutableStateOf(null) }
+
+    // LaunchedEffect to periodically save video position
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(10000L) // 10 seconds delay
+            videoViewInstance?.let { videoView ->
+                videoPlayerState.currentPosition = videoView.currentPosition
+                val sharedPreferences = context.getSharedPreferences("video_position", Context.MODE_PRIVATE)
+                with(sharedPreferences.edit()) {
+                    putInt(getVideoPositionKey(titulo, isSeries, episodeKey), videoPlayerState.currentPosition)
+                    apply()
+                    Log.i("sp", "$titulo $episodeKey ${videoPlayerState.currentPosition}")
+                }
+            }
+        }
+    }
 
     AndroidView(
         factory = { ctx ->
@@ -258,6 +285,9 @@ fun VideoPlayer(context: Context, videos: String, titulo: String, videoPlayerSta
                     mediaPlayer.seekTo(videoPlayerState.currentPosition)
                     start()
                 }
+
+                // Assign the VideoView instance to the variable
+                videoViewInstance = this
 
                 setOnTouchListener { _, motionEvent ->
                     when (motionEvent.action) {
@@ -284,7 +314,6 @@ fun VideoPlayer(context: Context, videos: String, titulo: String, videoPlayerSta
                         else -> false
                     }
                 }
-
             }
         },
         update = { view ->
@@ -296,15 +325,8 @@ fun VideoPlayer(context: Context, videos: String, titulo: String, videoPlayerSta
     )
 
     DisposableEffect(Unit) {
-        val videoView = VideoView(context)
-        videoView.setVideoPath(videos)
-        videoView.setOnPreparedListener { mediaPlayer ->
-            mediaPlayer.seekTo(videoPlayerState.currentPosition)
-            mediaPlayer.start()
-        }
-
         onDispose {
-            videoView.stopPlayback()
+            videoViewInstance?.stopPlayback()
         }
     }
 }
