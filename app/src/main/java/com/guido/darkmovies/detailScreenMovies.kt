@@ -10,7 +10,14 @@ data class MovieDetail(
     val videos: Map<String, String>?
 )
 
-suspend fun detailScreenMovies(titulo: String): MovieDetail? {
+data class SeriesDetail(
+    val titulo: String,
+    val descripcion: String?,
+    val portada: String?,
+    val series: Map<String, Map<String, String>>?
+)
+
+suspend fun detailScreenMovies(titulo: String): Any? {
     val db = FirebaseFirestore.getInstance()
     val moviesCollection = db.collection("movies")
 
@@ -21,8 +28,15 @@ suspend fun detailScreenMovies(titulo: String): MovieDetail? {
             val document = querySnapshot.documents.first()
             val descripcion = document.getString("descripcion")
             val portada = document.getString("portada")
-            val videos = document.get("videos") as? Map<String, String>
-            MovieDetail(titulo, descripcion, portada, videos)
+            val temporadas = document.getLong("temporadas")?.toInt()
+
+            if (temporadas != null && temporadas == 0) {
+                val videos = document.get("videos") as? Map<String, String>
+                MovieDetail(titulo, descripcion, portada, videos)
+            } else {
+                val series = document.get("videos") as? Map<String, Map<String, String>>
+                SeriesDetail(titulo, descripcion, portada, series)
+            }
         } else {
             null
         }

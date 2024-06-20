@@ -1,30 +1,31 @@
 package com.guido.darkmovies
 
+import android.content.Context
+import android.content.SharedPreferences
+import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
@@ -32,21 +33,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import android.content.Context
-import android.content.pm.ActivityInfo
-import android.util.Log
-import android.view.KeyEvent
-import android.view.MotionEvent
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.input.TextFieldValue
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.guido.darkmovies.ui.theme.DarkmoviesTheme
 
 class MainActivity : ComponentActivity() {
@@ -72,10 +60,12 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(
-                            "video_screen/{videos}/{titulo}",
+                            "video_screen/{videos}/{titulo}/{isSeries}/{episodeKey}",
                             arguments = listOf(
                                 navArgument("videos") { defaultValue = "" },
-                                navArgument("titulo") { defaultValue = "" }
+                                navArgument("titulo") { defaultValue = "" },
+                                navArgument("isSeries") { defaultValue = false },
+                                navArgument("episodeKey") { defaultValue = "" }
                             )
                         ) { backStackEntry ->
                             VideoScreen(
@@ -83,7 +73,9 @@ class MainActivity : ComponentActivity() {
                                 backStackEntry.arguments?.getString("videos") ?: "",
                                 context = context,
                                 backStackEntry.arguments?.getString("titulo") ?: "",
-                                )
+                                isSeries = backStackEntry.arguments?.getBoolean("isSeries") ?: false,
+                                episodeKey = backStackEntry.arguments?.getString("episodeKey") ?: ""
+                            )
                         }
                     }
                 }
@@ -102,7 +94,7 @@ fun MainScreen(navController: NavHostController, context: Context) {
         mainScreenPortadasTitulos(movies)
         fetchMoviesFromFirestoreByTitles(context, moviesVistas)
     }
-    Column() {
+    Column {
         TextField(
             value = searchTerm.value,
             onValueChange = { searchTerm.value = it },
@@ -110,7 +102,7 @@ fun MainScreen(navController: NavHostController, context: Context) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(10.dp))
-        Text("Continue wacthing :)")
+        Text("Continue watching :)")
         LazyRow {
             items(moviesVistas) { movie ->
                 Column(
@@ -153,39 +145,68 @@ fun MainScreen(navController: NavHostController, context: Context) {
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun DetailScreen(navController: NavHostController, titulo: String) {
-    val movieDetail = remember { mutableStateOf<MovieDetail?>(null) }
+    val detail = remember { mutableStateOf<Any?>(null) }
     LaunchedEffect(titulo) {
-        movieDetail.value = detailScreenMovies(titulo)
+        detail.value = detailScreenMovies(titulo)
     }
 
     Column {
-        movieDetail.value?.let { movie ->
-            GlideImage(
-                model = movie.portada ?: "",
-                contentDescription = "portada",
-                modifier = Modifier.width(200.dp)
-            )
-            Text(text = movie.titulo)
-            Text(text = movie.descripcion ?: "")
-            movie.videos?.forEach { (key, value) ->
-                Button(onClick = {
-                    navController.navigate("video_screen/${Uri.encode(value)}/${movie.titulo}")
-                }) {
-                    Text("watch $key")
+        when (val content = detail.value) {
+            is MovieDetail -> {
+                content.apply {
+                    GlideImage(
+                        model = portada ?: "",
+                        contentDescription = "portada",
+                        modifier = Modifier.width(200.dp)
+                    )
+                    Text(text = titulo)
+                    Text(text = descripcion ?: "")
+                    videos?.forEach { (key, value) ->
+                        Button(onClick = {
+                            navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0")
+                        }) {
+                            Text("watch $key")
+                        }
+                    }
                 }
+            }
+            is SeriesDetail -> {
+                content.apply {
+                    GlideImage(
+                        model = portada ?: "",
+                        contentDescription = "portada",
+                        modifier = Modifier.width(200.dp)
+                    )
+                    Text(text = titulo)
+                    Text(text = descripcion ?: "")
+                    series?.forEach { (key, value) ->
+                        Column {
+                            value.forEach { (chapterKey, chapterLink) ->
+                                Button(onClick = {
+                                    navController.navigate("video_screen/${Uri.encode(chapterLink.toString())}/$titulo/true/$chapterKey")
+                                }) {
+                                    Text("Watch Episode $chapterKey")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else -> {
+                Text("Loading...")
             }
         }
     }
 }
 
 @Composable
-fun VideoScreen(navController: NavHostController, videos: String, context: Context, titulo: String) {
+fun VideoScreen(navController: NavHostController, videos: String, context: Context, titulo: String, isSeries: Boolean, episodeKey: String) {
     val activity = LocalContext.current as ComponentActivity
     val sharedPreferences = activity.getSharedPreferences("video_position", Context.MODE_PRIVATE)
 
     val videoPlayerState = remember {
         VideoPlayerState(
-            sharedPreferences.getInt(titulo, 0)
+            sharedPreferences.getInt(getVideoPositionKey(titulo, isSeries, episodeKey), 0)
         )
     }
 
@@ -197,9 +218,9 @@ fun VideoScreen(navController: NavHostController, videos: String, context: Conte
 
             // Guardar el tiempo actual de reproducción del video al salir
             with(sharedPreferences.edit()) {
-                putInt(titulo, videoPlayerState.currentPosition)
-                Log.i("sp", videoPlayerState.currentPosition.toString())
+                putInt(getVideoPositionKey(titulo, isSeries, episodeKey), videoPlayerState.currentPosition)
                 apply()
+                Log.i("sp", "$titulo $episodeKey ${videoPlayerState.currentPosition}")
             }
         }
     }
@@ -208,7 +229,15 @@ fun VideoScreen(navController: NavHostController, videos: String, context: Conte
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        VideoPlayer(context = context, videos = videos, titulo = titulo, videoPlayerState = videoPlayerState)
+        VideoPlayer(context = context, videos = videos, titulo = titulo, videoPlayerState = videoPlayerState, isSeries = isSeries, episodeKey = episodeKey)
+    }
+}
+
+fun getVideoPositionKey(titulo: String, isSeries: Boolean, episodeKey: String = ""): String {
+    return if (isSeries) {
+        "$titulo-$episodeKey-episode"
+    } else {
+        "$titulo-video"
     }
 }
 
@@ -217,7 +246,7 @@ class VideoPlayerState(initialPosition: Int) {
 }
 
 @Composable
-fun VideoPlayer(context: Context, videos: String, titulo: String, videoPlayerState: VideoPlayerState) {
+fun VideoPlayer(context: Context, videos: String, titulo: String, videoPlayerState: VideoPlayerState, isSeries: Boolean, episodeKey: String) {
     val mediaController = remember { MediaController(context) }
 
     AndroidView(
@@ -236,9 +265,9 @@ fun VideoPlayer(context: Context, videos: String, titulo: String, videoPlayerSta
                             videoPlayerState.currentPosition = currentPosition
                             val sharedPreferences = context.getSharedPreferences("video_position", Context.MODE_PRIVATE)
                             with(sharedPreferences.edit()) {
-                                putInt(titulo, videoPlayerState.currentPosition)
-                                Log.i("sp", videoPlayerState.currentPosition.toString())
+                                putInt(getVideoPositionKey(titulo, isSeries, episodeKey), videoPlayerState.currentPosition)
                                 apply()
+                                Log.i("sp", "$titulo $episodeKey ${videoPlayerState.currentPosition}")
                             }
                             false
                         }
