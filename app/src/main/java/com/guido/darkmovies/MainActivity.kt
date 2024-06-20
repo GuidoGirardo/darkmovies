@@ -369,7 +369,7 @@ fun VideoPlayer(
                 // Assign the VideoView instance to the variable
                 videoViewInstance = this
 
-                setOnTouchListener { _, motionEvent ->
+                /* setOnTouchListener { _, motionEvent ->
                     when (motionEvent.action) {
                         MotionEvent.ACTION_DOWN -> {
                             videoPlayerState.currentPosition = currentPosition
@@ -383,7 +383,7 @@ fun VideoPlayer(
                         }
                         else -> false
                     }
-                }
+                } */
 
                 setOnKeyListener { _, keyCode, _ ->
                     when (keyCode) {
