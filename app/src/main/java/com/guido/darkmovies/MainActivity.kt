@@ -177,39 +177,60 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
             }
             is SeriesDetail -> {
                 item {
-                    content.apply {
-                        GlideImage(
-                            model = portada ?: "",
-                            contentDescription = "portada",
-                            modifier = Modifier.width(200.dp)
-                        )
-                        Text(text = titulo)
-                        Text(text = descripcion ?: "")
-                        Text(text = "Temporadas: $temporadas")
+                content.apply {
+                    GlideImage(
+                        model = portada ?: "",
+                        contentDescription = "portada",
+                        modifier = Modifier.width(200.dp)
+                    )
+                    Text(text = titulo)
+                    Text(text = descripcion ?: "")
+                    Text(text = "Temporadas: $temporadas")
 
-                        // Mostrar los episodios por idioma y temporada
-                        series?.let { series ->
-                            series.forEach { (language, seasonMap) ->
-                                this@LazyColumn.item {
-                                    Text(text = "Idioma: $language")
+                    // Selector de idioma
+                    var selectedLanguage by remember {
+                        mutableStateOf(
+                            series?.keys!!.firstOrNull() ?: ""
+                        )
+                    }
+
+                    Row(Modifier.padding(vertical = 8.dp)) {
+                        series?.keys!!.forEach { language ->
+                            Button(
+                                onClick = { selectedLanguage = language },
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            ) {
+                                Text(text = language)
+                            }
+                        }
+                    }
+
+                    // Mostrar las temporadas y episodios del idioma seleccionado
+                    series?.get(selectedLanguage)?.forEach { (seasonNumber, episodesMap) ->
+                        this@LazyColumn.item {
+                            Column {
+                                if (seasonNumber == "1") {
+                                    Text(text = "Idioma: $selectedLanguage")
                                 }
-                                seasonMap.forEach { (seasonNumber, episodesMap) ->
-                                    this@LazyColumn.item {
-                                        Text(text = "Temporada $seasonNumber:")
-                                    }
-                                    episodesMap.forEach { (episodeNumber, episodeLink) ->
-                                        this@LazyColumn.item {
-                                            Button(onClick = {
-                                                 navController.navigate("video_screen/${Uri.encode(episodeLink)}/$titulo/true/$seasonNumber/$episodeNumber")
-                                            }) {
-                                                Text("Ver Episodio $episodeNumber")
-                                            }
-                                        }
+                                // Text(text = "Idioma: $selectedLanguage")
+                                Text(text = "Temporada $seasonNumber:")
+                                episodesMap.forEach { (episodeNumber, episodeLink) ->
+                                    Button(onClick = {
+                                        navController.navigate(
+                                            "video_screen/${
+                                                Uri.encode(
+                                                    episodeLink
+                                                )
+                                            }/$titulo/true/$seasonNumber/$episodeNumber"
+                                        )
+                                    }) {
+                                        Text("Ver Episodio $episodeNumber")
                                     }
                                 }
                             }
                         }
                     }
+                }
                 }
             }
             else -> {
@@ -220,7 +241,6 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
         }
     }
 }
-
 
 @Composable
 fun VideoScreen(
