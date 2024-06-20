@@ -149,8 +149,12 @@ fun MainScreen(navController: NavHostController, context: Context) {
 @Composable
 fun DetailScreen(navController: NavHostController, titulo: String) {
     val detail = remember { mutableStateOf<Any?>(null) }
+    var selectedLanguage by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(titulo) {
-        detail.value = detailScreenMovies(titulo)
+        val fetchedDetail = detailScreenMovies(titulo)
+        detail.value = fetchedDetail
+        selectedLanguage = (fetchedDetail as? SeriesDetail)?.series?.keys?.firstOrNull()
     }
 
     LazyColumn {
@@ -177,51 +181,44 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
             }
             is SeriesDetail -> {
                 item {
-                content.apply {
-                    GlideImage(
-                        model = portada ?: "",
-                        contentDescription = "portada",
-                        modifier = Modifier.width(200.dp)
-                    )
-                    Text(text = titulo)
-                    Text(text = descripcion ?: "")
-                    Text(text = "Temporadas: $temporadas")
-
-                    // Selector de idioma
-                    var selectedLanguage by remember {
-                        mutableStateOf(
-                            series?.keys!!.firstOrNull() ?: ""
+                    content.apply {
+                        GlideImage(
+                            model = portada ?: "",
+                            contentDescription = "portada",
+                            modifier = Modifier.width(200.dp)
                         )
-                    }
+                        Text(text = titulo)
+                        Text(text = descripcion ?: "")
+                        Text(text = "Temporadas: $temporadas")
 
-                    Row(Modifier.padding(vertical = 8.dp)) {
-                        series?.keys!!.forEach { language ->
-                            Button(
-                                onClick = { selectedLanguage = language },
-                                modifier = Modifier.padding(horizontal = 4.dp)
-                            ) {
-                                Text(text = language)
+                        // Selector de idioma
+                        Row(Modifier.padding(vertical = 8.dp)) {
+                            series?.keys?.forEach { language ->
+                                Button(
+                                    onClick = {
+                                        selectedLanguage = language
+                                    },
+                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                ) {
+                                    Text(text = language)
+                                }
                             }
                         }
                     }
+                }
 
-                    // Mostrar las temporadas y episodios del idioma seleccionado
-                    series?.get(selectedLanguage)?.forEach { (seasonNumber, episodesMap) ->
-                        this@LazyColumn.item {
+                selectedLanguage?.let { language ->
+                    content.series?.get(language)?.forEach { (seasonNumber, episodesMap) ->
+                        item {
                             Column {
                                 if (seasonNumber == "1") {
-                                    Text(text = "Idioma: $selectedLanguage")
+                                    Text(text = "Idioma: $language")
                                 }
-                                // Text(text = "Idioma: $selectedLanguage")
                                 Text(text = "Temporada $seasonNumber:")
                                 episodesMap.forEach { (episodeNumber, episodeLink) ->
                                     Button(onClick = {
                                         navController.navigate(
-                                            "video_screen/${
-                                                Uri.encode(
-                                                    episodeLink
-                                                )
-                                            }/$titulo/true/$seasonNumber/$episodeNumber"
+                                            "video_screen/${Uri.encode(episodeLink)}/$titulo/true/$seasonNumber/$episodeNumber"
                                         )
                                     }) {
                                         Text("Ver Episodio $episodeNumber")
@@ -230,7 +227,6 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                             }
                         }
                     }
-                }
                 }
             }
             else -> {
@@ -256,9 +252,12 @@ fun VideoScreen(
     val sharedPreferences = activity.getSharedPreferences("video_position", Context.MODE_PRIVATE)
 
     val sharedPreferences2 = activity.getSharedPreferences("videos", Context.MODE_PRIVATE)
-    with(sharedPreferences2.edit()) {
-        putString(titulo, titulo)
-        apply()
+    val existingTitle = sharedPreferences2.getString(titulo, null)
+    if (existingTitle == null) {
+        with(sharedPreferences2.edit()) {
+            putString(titulo, titulo)
+            apply()
+        }
     }
 
     // Creamos una clave única para guardar y recuperar la posición del video
