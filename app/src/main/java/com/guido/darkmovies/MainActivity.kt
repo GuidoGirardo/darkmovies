@@ -255,6 +255,12 @@ fun VideoScreen(
     val activity = LocalContext.current as ComponentActivity
     val sharedPreferences = activity.getSharedPreferences("video_position", Context.MODE_PRIVATE)
 
+    val sharedPreferences2 = activity.getSharedPreferences("videos", Context.MODE_PRIVATE)
+    with(sharedPreferences2.edit()) {
+        putString(titulo, titulo)
+        apply()
+    }
+
     // Creamos una clave única para guardar y recuperar la posición del video
     val videoPositionKey = getVideoPositionKey(titulo, isSeries, seasonNumber, episodeKey)
 
