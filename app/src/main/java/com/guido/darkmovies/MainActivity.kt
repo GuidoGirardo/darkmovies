@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
-import android.view.MotionEvent
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.activity.ComponentActivity
@@ -26,8 +25,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
@@ -171,18 +172,30 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
             is MovieDetail -> {
                 item {
                     content.apply {
-                        GlideImage(
-                            model = portada ?: "",
-                            contentDescription = "portada",
-                            modifier = Modifier.width(200.dp)
-                        )
-                        Text(text = titulo)
-                        Text(text = descripcion ?: "")
-                        videos?.forEach { (key, value) ->
-                            Button(onClick = {
-                                navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0/0")
-                            }) {
-                                Text("Ver $key")
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                GlideImage(
+                                    model = portada ?: "",
+                                    contentDescription = "portada",
+                                    modifier = Modifier.width(200.dp).height(300.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Text(text = titulo)
+                                Text(text = descripcion ?: "")
+                                videos?.forEach { (key, value) ->
+                                    Button(onClick = {
+                                        navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0/0")
+                                    }) {
+                                        Text("Ver $key")
+                                    }
+                                }
                             }
                         }
                     }
@@ -191,10 +204,20 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
             is SeriesDetail -> {
                 item {
                     content.apply {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Spacer(modifier = Modifier.height(16.dp))
                         GlideImage(
                             model = portada ?: "",
                             contentDescription = "portada",
-                            modifier = Modifier.width(200.dp)
+                            modifier = Modifier.width(200.dp).height(300.dp),
+                            contentScale = ContentScale.Crop
                         )
                         Text(text = titulo)
                         Text(text = descripcion ?: "")
@@ -218,8 +241,10 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
 
                 selectedLanguage?.let { language ->
                     content.series?.get(language)?.forEach { (seasonNumber, episodesMap) ->
-                        item {
-                            Column {
+                        this@LazyColumn.item {
+                            Column(modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
                                 if (seasonNumber == "1") {
                                     Text(text = "Idioma: $language")
                                 }
@@ -246,6 +271,8 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                     }
                                 }
                             }
+                        }
+                    }
                         }
                     }
                 }
