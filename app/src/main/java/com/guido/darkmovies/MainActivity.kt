@@ -247,7 +247,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = Blanco
                                             ),
-                                            modifier = Modifier.padding(horizontal = 4.dp).width(150.dp)
+                                            modifier = Modifier.padding(horizontal = 4.dp).width(120.dp)
                                         ) {
                                             Text(text = language, color = Gris)
                                         }
