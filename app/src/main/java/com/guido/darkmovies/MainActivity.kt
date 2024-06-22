@@ -10,11 +10,13 @@ import android.widget.MediaController
 import android.widget.VideoView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -24,11 +26,11 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
@@ -38,7 +40,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.guido.darkmovies.ui.theme.Blanco
 import com.guido.darkmovies.ui.theme.DarkmoviesTheme
+import com.guido.darkmovies.ui.theme.Gris
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -100,7 +104,7 @@ fun MainScreen(navController: NavHostController, context: Context) {
         mainScreenPortadasTitulos(movies)
         fetchMoviesFromFirestoreByTitles(context, moviesVistas)
     }
-    Column {
+    Column(modifier = Modifier.background(Gris)) {
         TextField(
             value = searchTerm.value,
             onValueChange = { searchTerm.value = it },
@@ -108,8 +112,12 @@ fun MainScreen(navController: NavHostController, context: Context) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(10.dp))
-        Text("Continue watching :)")
-        LazyRow {
+        if(moviesVistas.isNotEmpty()){
+            Text("Continue watching :)", modifier = Modifier.padding(start = 8.dp),
+                color = Blanco)
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        LazyRow(modifier = Modifier.padding(start = 8.dp)) {
             items(moviesVistas) { movie ->
                 Column(
                     modifier = Modifier.clickable {
@@ -119,14 +127,15 @@ fun MainScreen(navController: NavHostController, context: Context) {
                     GlideImage(
                         model = movie.portada,
                         contentDescription = "portada",
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(100.dp).height(160.dp).clip(RoundedCornerShape(4.dp)),
+                        contentScale = ContentScale.Crop
                     )
-                    Text(movie.titulo)
                 }
+                Spacer(modifier = Modifier.width(8.dp))
             }
         }
-        Spacer(modifier = Modifier.height(40.dp))
-        LazyRow {
+        Spacer(modifier = Modifier.height(20.dp))
+        LazyRow(modifier = Modifier.padding(start = 8.dp)) {
             val filteredMovies = movies.filter {
                 it.titulo.contains(searchTerm.value.text, ignoreCase = true)
             }
@@ -139,10 +148,11 @@ fun MainScreen(navController: NavHostController, context: Context) {
                     GlideImage(
                         model = movie.portada,
                         contentDescription = "portada",
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(100.dp).height(160.dp).clip(RoundedCornerShape(4.dp)),
+                        contentScale = ContentScale.Crop
                     )
-                    Text(movie.titulo)
                 }
+                Spacer(modifier = Modifier.width(8.dp))
             }
         }
     }
@@ -167,8 +177,8 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
         selectedLanguage = (fetchedDetail as? SeriesDetail)?.series?.keys?.firstOrNull()
     }
 
-    LazyColumn {
-        when (val content = detail.value) {
+    LazyColumn(modifier = Modifier.background(Gris)){
+        when(val content = detail.value){
             is MovieDetail -> {
                 item {
                     content.apply {
@@ -184,11 +194,11 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                 GlideImage(
                                     model = portada ?: "",
                                     contentDescription = "portada",
-                                    modifier = Modifier.width(200.dp).height(300.dp),
+                                    modifier = Modifier.width(200.dp).height(300.dp).clip(RoundedCornerShape(8.dp)),
                                     contentScale = ContentScale.Crop
                                 )
-                                Text(text = titulo)
-                                Text(text = descripcion ?: "")
+                                Text(text = titulo, color = Blanco)
+                                Text(text = descripcion ?: "", color = Blanco)
                                 videos?.forEach { (key, value) ->
                                     Button(onClick = {
                                         navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0/0")
@@ -213,66 +223,66 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Spacer(modifier = Modifier.height(16.dp))
-                        GlideImage(
-                            model = portada ?: "",
-                            contentDescription = "portada",
-                            modifier = Modifier.width(200.dp).height(300.dp),
-                            contentScale = ContentScale.Crop
-                        )
-                        Text(text = titulo)
-                        Text(text = descripcion ?: "")
-                        Text(text = "Temporadas: $temporadas")
+                                GlideImage(
+                                    model = portada ?: "",
+                                    contentDescription = "portada",
+                                    modifier = Modifier.width(200.dp).height(300.dp).clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Text(text = titulo, color = Blanco)
+                                Text(text = descripcion ?: "", color = Blanco)
+                                Text(text = "Temporadas: $temporadas", color = Blanco)
 
-                        // Selector de idioma
-                        Row(Modifier.padding(vertical = 8.dp)) {
-                            series?.keys?.forEach { language ->
-                                Button(
-                                    onClick = {
-                                        selectedLanguage = language
-                                    },
-                                    modifier = Modifier.padding(horizontal = 4.dp)
-                                ) {
-                                    Text(text = language)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                selectedLanguage?.let { language ->
-                    content.series?.get(language)?.forEach { (seasonNumber, episodesMap) ->
-                        this@LazyColumn.item {
-                            Column(modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                if (seasonNumber == "1") {
-                                    Text(text = "Idioma: $language")
-                                }
-                                Text(text = "Temporada $seasonNumber:")
-                                episodesMap.forEach { (episodeNumber, episodeLink) ->
-                                    val episodeKey = "$seasonNumber-$episodeNumber"
-                                    Button(
-                                        onClick = {
-                                            navController.navigate(
-                                                "video_screen/${Uri.encode(episodeLink)}/$titulo/true/$seasonNumber/$episodeNumber"
-                                            )
-                                            // Update last clicked episode
-                                            lastClickedEpisode = episodeKey
-                                            with(sharedPreferences.edit()) {
-                                                putString("$titulo-lastClickedEpisode", episodeKey)
-                                                apply()
-                                            }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = if (lastClickedEpisode == episodeKey) Color.Green else Color.Gray
-                                        )
-                                    ) {
-                                        Text("Ver Episodio $episodeNumber")
+                                // Selector de idioma
+                                Row(Modifier.padding(vertical = 8.dp)) {
+                                    series?.keys?.forEach { language ->
+                                        Button(
+                                            onClick = {
+                                                selectedLanguage = language
+                                            },
+                                            modifier = Modifier.padding(horizontal = 4.dp)
+                                        ) {
+                                            Text(text = language)
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
+
+                        selectedLanguage?.let { language ->
+                            content.series?.get(language)?.forEach { (seasonNumber, episodesMap) ->
+                                this@LazyColumn.item {
+                                    Column(modifier = Modifier.fillMaxWidth(),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        if (seasonNumber == "1") {
+                                            Text(text = "Idioma: $language", color = Blanco)
+                                        }
+                                        Text(text = "Temporada $seasonNumber:", color = Blanco)
+                                        episodesMap.forEach { (episodeNumber, episodeLink) ->
+                                            val episodeKey = "$seasonNumber-$episodeNumber"
+                                            Button(
+                                                onClick = {
+                                                    navController.navigate(
+                                                        "video_screen/${Uri.encode(episodeLink)}/$titulo/true/$seasonNumber/$episodeNumber"
+                                                    )
+                                                    // Update last clicked episode
+                                                    lastClickedEpisode = episodeKey
+                                                    with(sharedPreferences.edit()) {
+                                                        putString("$titulo-lastClickedEpisode", episodeKey)
+                                                        apply()
+                                                    }
+                                                },
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = if (lastClickedEpisode == episodeKey) Color.Green else Color.Gray
+                                                )
+                                            ) {
+                                                Text("Ver Episodio $episodeNumber")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -338,18 +348,6 @@ fun VideoScreen(
     ) {
         VideoPlayer(context = context, videos = videos, titulo = titulo, videoPlayerState = videoPlayerState, isSeries = isSeries, episodeKey = episodeKey, seasonNumber = seasonNumber)
     }
-}
-
-fun getVideoPositionKey(titulo: String, isSeries: Boolean, seasonNumber: String, episodeKey: String): String {
-    return if (isSeries) {
-        "$titulo-season$seasonNumber-episode$episodeKey-video"
-    } else {
-        "$titulo-video"
-    }
-}
-
-class VideoPlayerState(initialPosition: Int) {
-    var currentPosition by mutableStateOf(initialPosition)
 }
 
 @Composable
@@ -436,4 +434,16 @@ fun VideoPlayer(
             videoViewInstance?.stopPlayback()
         }
     }
+}
+
+fun getVideoPositionKey(titulo: String, isSeries: Boolean, seasonNumber: String, episodeKey: String): String {
+    return if (isSeries) {
+        "$titulo-season$seasonNumber-episode$episodeKey-video"
+    } else {
+        "$titulo-video"
+    }
+}
+
+class VideoPlayerState(initialPosition: Int) {
+    var currentPosition by mutableStateOf(initialPosition)
 }
