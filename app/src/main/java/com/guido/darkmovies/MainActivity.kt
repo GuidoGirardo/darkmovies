@@ -202,8 +202,12 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                 videos?.forEach { (key, value) ->
                                     Button(onClick = {
                                         navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0/0")
-                                    }) {
-                                        Text("Ver $key")
+                                    },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Blanco
+                                        ),modifier = Modifier.width(200.dp),
+                                        shape = RoundedCornerShape(5.dp)) {
+                                        Text("Ver $key", color = Gris)
                                     }
                                 }
                             }
@@ -240,9 +244,12 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                             onClick = {
                                                 selectedLanguage = language
                                             },
-                                            modifier = Modifier.padding(horizontal = 4.dp)
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Blanco
+                                            ),
+                                            modifier = Modifier.padding(horizontal = 4.dp).width(150.dp)
                                         ) {
-                                            Text(text = language)
+                                            Text(text = language, color = Gris)
                                         }
                                     }
                                 }
@@ -274,10 +281,12 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                                     }
                                                 },
                                                 colors = ButtonDefaults.buttonColors(
-                                                    containerColor = if (lastClickedEpisode == episodeKey) Color.Green else Color.Gray
-                                                )
+                                                    containerColor = if (lastClickedEpisode == episodeKey) Color.Green else Blanco
+                                                ),
+                                                modifier = Modifier.width(200.dp),
+                                                shape = RoundedCornerShape(5.dp)
                                             ) {
-                                                Text("Ver Episodio $episodeNumber")
+                                                Text("Ver Episodio $episodeNumber", color = Gris)
                                             }
                                         }
                                     }
