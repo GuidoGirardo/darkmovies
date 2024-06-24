@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+
         insetsController.apply {
             hide(WindowInsetsCompat.Type.statusBars())
             hide(WindowInsetsCompat.Type.navigationBars())
@@ -384,7 +385,6 @@ fun VideoPlayer(
     episodeKey: String,
     seasonNumber: String
 ) {
-
     val mediaController = remember { MediaController(context) }
 
     // A variable to store the VideoView instance
