@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
+import android.view.View
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.activity.ComponentActivity
@@ -33,6 +34,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -48,6 +52,14 @@ import kotlinx.coroutines.delay
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        insetsController.apply {
+            hide(WindowInsetsCompat.Type.statusBars())
+            hide(WindowInsetsCompat.Type.navigationBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+
         setContent {
             DarkmoviesTheme {
                 val navController = rememberNavController()
@@ -177,37 +189,38 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
         selectedLanguage = (fetchedDetail as? SeriesDetail)?.series?.keys?.firstOrNull()
     }
 
-    LazyColumn(modifier = Modifier.background(Gris)){
-        when(val content = detail.value){
+    LazyColumn(modifier = Modifier.background(Gris)) {
+        when (val content = detail.value) {
             is MovieDetail -> {
                 item {
                     content.apply {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Spacer(modifier = Modifier.height(16.dp))
                                 GlideImage(
                                     model = portada ?: "",
                                     contentDescription = "portada",
-                                    modifier = Modifier.width(200.dp).height(300.dp).clip(RoundedCornerShape(8.dp)),
+                                    modifier = Modifier
+                                        .width(200.dp)
+                                        .height(300.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
                                     contentScale = ContentScale.Crop
                                 )
                                 Text(text = titulo, color = Blanco)
                                 Text(text = descripcion ?: "", color = Blanco)
                                 videos?.forEach { (key, value) ->
-                                    Button(onClick = {
-                                        navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0/0")
-                                    },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Blanco
-                                        ),modifier = Modifier.width(200.dp),
-                                        shape = RoundedCornerShape(5.dp)) {
-                                        Text("Ver $key", color = Gris)
+                                    Button(
+                                        onClick = {
+                                            navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0/0")
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Blanco),
+                                        modifier = Modifier.width(200.dp),
+                                        shape = RoundedCornerShape(5.dp)
+                                    ) {
+                                        Text("Watch $key", color = Gris)
                                     }
                                 }
                             }
@@ -219,35 +232,35 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                 item {
                     content.apply {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Spacer(modifier = Modifier.height(16.dp))
                                 GlideImage(
                                     model = portada ?: "",
                                     contentDescription = "portada",
-                                    modifier = Modifier.width(200.dp).height(300.dp).clip(RoundedCornerShape(8.dp)),
+                                    modifier = Modifier
+                                        .width(200.dp)
+                                        .height(300.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
                                     contentScale = ContentScale.Crop
                                 )
                                 Text(text = titulo, color = Blanco)
                                 Text(text = descripcion ?: "", color = Blanco)
-                                Text(text = "Temporadas: $temporadas", color = Blanco)
+                                Text(text = "Seasons: $temporadas", color = Blanco)
 
-                                // Selector de idioma
-                                Row(Modifier.padding(vertical = 8.dp)) {
-                                    series?.keys?.forEach { language ->
+                                // Language selector
+                                LazyRow(Modifier.padding(vertical = 8.dp)) {
+                                    items(series?.keys?.toList() ?: emptyList()) { language ->
                                         Button(
                                             onClick = {
                                                 selectedLanguage = language
                                             },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Blanco
-                                            ),
-                                            modifier = Modifier.padding(horizontal = 4.dp).width(120.dp)
+                                            colors = ButtonDefaults.buttonColors(containerColor = Blanco),
+                                            modifier = Modifier
+                                                .padding(horizontal = 4.dp)
+                                                .wrapContentWidth()
                                         ) {
                                             Text(text = language, color = Gris)
                                         }
@@ -255,40 +268,42 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                 }
                             }
                         }
+                    }
+                }
 
-                        selectedLanguage?.let { language ->
-                            content.series?.get(language)?.forEach { (seasonNumber, episodesMap) ->
-                                this@LazyColumn.item {
-                                    Column(modifier = Modifier.fillMaxWidth(),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        if (seasonNumber == "1") {
-                                            Text(text = "Idioma: $language", color = Blanco)
-                                        }
-                                        Text(text = "Temporada $seasonNumber:", color = Blanco)
-                                        episodesMap.forEach { (episodeNumber, episodeLink) ->
-                                            val episodeKey = "$seasonNumber-$episodeNumber"
-                                            Button(
-                                                onClick = {
-                                                    navController.navigate(
-                                                        "video_screen/${Uri.encode(episodeLink)}/$titulo/true/$seasonNumber/$episodeNumber"
-                                                    )
-                                                    // Update last clicked episode
-                                                    lastClickedEpisode = episodeKey
-                                                    with(sharedPreferences.edit()) {
-                                                        putString("$titulo-lastClickedEpisode", episodeKey)
-                                                        apply()
-                                                    }
-                                                },
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = if (lastClickedEpisode == episodeKey) Color.Green else Blanco
-                                                ),
-                                                modifier = Modifier.width(200.dp),
-                                                shape = RoundedCornerShape(5.dp)
-                                            ) {
-                                                Text("Ver Episodio $episodeNumber", color = Gris)
+                // Show selected language's episodes
+                selectedLanguage?.let { language ->
+                    content.series?.get(language)?.forEach { (seasonNumber, episodesMap) ->
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                if (seasonNumber == "1") {
+                                    Text(text = "Language: $language", color = Blanco)
+                                }
+                                Text(text = "Season $seasonNumber:", color = Blanco)
+                                episodesMap.forEach { (episodeNumber, episodeLink) ->
+                                    val episodeKey = "$seasonNumber-$episodeNumber"
+                                    Button(
+                                        onClick = {
+                                            navController.navigate(
+                                                "video_screen/${Uri.encode(episodeLink)}/$titulo/true/$seasonNumber/$episodeNumber"
+                                            )
+                                            // Update last clicked episode
+                                            lastClickedEpisode = episodeKey
+                                            with(sharedPreferences.edit()) {
+                                                putString("$titulo-lastClickedEpisode", episodeKey)
+                                                apply()
                                             }
-                                        }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (lastClickedEpisode == episodeKey) Color.Green else Blanco
+                                        ),
+                                        modifier = Modifier.width(200.dp),
+                                        shape = RoundedCornerShape(5.dp)
+                                    ) {
+                                        Text("Watch chapter $episodeNumber", color = Gris)
                                     }
                                 }
                             }
@@ -369,6 +384,7 @@ fun VideoPlayer(
     episodeKey: String,
     seasonNumber: String
 ) {
+
     val mediaController = remember { MediaController(context) }
 
     // A variable to store the VideoView instance
