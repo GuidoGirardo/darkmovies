@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.View
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.activity.ComponentActivity
@@ -19,8 +18,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -32,7 +34,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
@@ -49,8 +53,6 @@ import com.guido.darkmovies.ui.theme.Blanco
 import com.guido.darkmovies.ui.theme.DarkmoviesTheme
 import com.guido.darkmovies.ui.theme.Gris
 import kotlinx.coroutines.delay
-import java.util.Timer
-import kotlin.concurrent.schedule
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -202,7 +204,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(32.dp))
                                 GlideImage(
                                     model = portada ?: "",
                                     contentDescription = "portada",
@@ -212,20 +214,44 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                         .clip(RoundedCornerShape(8.dp)),
                                     contentScale = ContentScale.Crop
                                 )
-                                Text(text = titulo, color = Blanco)
-                                Text(text = descripcion ?: "", color = Blanco)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(text = titulo, color = Blanco, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(16.dp))
                                 videos?.forEach { (key, value) ->
                                     Button(
                                         onClick = {
                                             navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0/0")
                                         },
                                         colors = ButtonDefaults.buttonColors(containerColor = Blanco),
-                                        modifier = Modifier.width(200.dp),
+                                        modifier = Modifier.width(200.dp).height(40.dp),
                                         shape = RoundedCornerShape(5.dp)
                                     ) {
-                                        Text("Watch $key", color = Gris)
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.PlayArrow,
+                                                contentDescription = "Play icon",
+                                                modifier = Modifier.size(34.dp)
+                                                    .weight(1f) // Ocupa 1/4 del ancho
+                                                    .wrapContentWidth(Alignment.CenterHorizontally), // Centrado horizontalmente
+                                                tint = Gris
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp)) // Espacio entre el icono y el texto
+                                            Text(
+                                                text = key,
+                                                color = Gris,
+                                                textAlign = TextAlign.Start, // Alinear el texto a la izquierda
+                                                modifier = Modifier.weight(3f) // Ocupa 3/4 del ancho
+                                            )
+                                        }
                                     }
+                                    Spacer(modifier = Modifier.height(6.dp))
                                 }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(text = descripcion ?: "", color = Blanco, modifier = Modifier.padding(horizontal = 35.dp))
+                                Spacer(modifier = Modifier.height(32.dp))
                             }
                         }
                     }
@@ -239,7 +265,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(32.dp))
                                 GlideImage(
                                     model = portada ?: "",
                                     contentDescription = "portada",
@@ -249,10 +275,13 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                         .clip(RoundedCornerShape(8.dp)),
                                     contentScale = ContentScale.Crop
                                 )
-                                Text(text = titulo, color = Blanco)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(text = titulo, color = Blanco, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(text = descripcion ?: "", color = Blanco)
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(text = "Seasons: $temporadas", color = Blanco)
-
+                                Spacer(modifier = Modifier.height(8.dp))
                                 // Language selector
                                 LazyRow(Modifier.padding(vertical = 8.dp)) {
                                     items(series?.keys?.toList() ?: emptyList()) { language ->
