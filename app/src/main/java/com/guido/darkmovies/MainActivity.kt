@@ -247,9 +247,9 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                             )
                                         }
                                     }
-                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Spacer(modifier = Modifier.height(8.dp))
                                 }
-                                Spacer(modifier = Modifier.height(10.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Text(text = descripcion ?: "", color = Blanco, modifier = Modifier.padding(horizontal = 35.dp))
                                 Spacer(modifier = Modifier.height(32.dp))
                             }
