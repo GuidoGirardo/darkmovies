@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.widget.MediaController
 import android.widget.VideoView
@@ -48,6 +49,8 @@ import com.guido.darkmovies.ui.theme.Blanco
 import com.guido.darkmovies.ui.theme.DarkmoviesTheme
 import com.guido.darkmovies.ui.theme.Gris
 import kotlinx.coroutines.delay
+import java.util.Timer
+import kotlin.concurrent.schedule
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -366,11 +369,25 @@ fun VideoScreen(
         }
     }
 
+    // Manejar la visibilidad de los botones de navegación
+    val windowInsetsController = remember {
+        WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+    }
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        VideoPlayer(context = context, videos = videos, titulo = titulo, videoPlayerState = videoPlayerState, isSeries = isSeries, episodeKey = episodeKey, seasonNumber = seasonNumber)
+        VideoPlayer(
+            context = context,
+            videos = videos,
+            titulo = titulo,
+            videoPlayerState = videoPlayerState,
+            isSeries = isSeries,
+            episodeKey = episodeKey,
+            seasonNumber = seasonNumber,
+            windowInsetsController = windowInsetsController // Pasamos el controlador de insets al VideoPlayer
+        )
     }
 }
 
@@ -382,7 +399,8 @@ fun VideoPlayer(
     videoPlayerState: VideoPlayerState,
     isSeries: Boolean,
     episodeKey: String,
-    seasonNumber: String
+    seasonNumber: String,
+    windowInsetsController: WindowInsetsControllerCompat? // Agregamos el controlador de insets como parámetro
 ) {
     val mediaController = remember { MediaController(context) }
 
@@ -399,7 +417,7 @@ fun VideoPlayer(
                 with(sharedPreferences.edit()) {
                     putInt(getVideoPositionKey(titulo, isSeries, seasonNumber, episodeKey), videoPlayerState.currentPosition)
                     apply()
-                    Log.i("sppp", "$titulo $episodeKey ${videoPlayerState.currentPosition}")
+                    Log.i("sppp", "$titulo $seasonNumber $episodeKey ${videoPlayerState.currentPosition}")
                 }
             }
         }
@@ -418,21 +436,18 @@ fun VideoPlayer(
                 // Assign the VideoView instance to the variable
                 videoViewInstance = this
 
-                /* setOnTouchListener { _, motionEvent ->
+                setOnTouchListener { _, motionEvent ->
                     when (motionEvent.action) {
                         MotionEvent.ACTION_DOWN -> {
-                            videoPlayerState.currentPosition = currentPosition
-                            val sharedPreferences = context.getSharedPreferences("video_position", Context.MODE_PRIVATE)
-                            with(sharedPreferences.edit()) {
-                                putInt(getVideoPositionKey(titulo, isSeries, seasonNumber, episodeKey), videoPlayerState.currentPosition)
-                                apply()
-                                Log.i("sppp", "$titulo $episodeKey ${videoPlayerState.currentPosition}")
+                            // Ocultar los botones de navegación al tocar la pantalla
+                            windowInsetsController?.run {
+                                hide(WindowInsetsCompat.Type.systemBars())
                             }
                             false
                         }
                         else -> false
                     }
-                } */
+                }
 
                 setOnKeyListener { _, keyCode, _ ->
                     when (keyCode) {
