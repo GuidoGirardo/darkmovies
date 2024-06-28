@@ -11,4 +11,5 @@ val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
 val Gris = Color(0xFF343434)
+val GrisOscuro = Color(0xFF121212)
 val Blanco = Color(0xFFFDFDFD)

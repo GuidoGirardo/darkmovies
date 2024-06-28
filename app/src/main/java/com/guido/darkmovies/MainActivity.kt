@@ -55,6 +55,7 @@ import com.google.android.exoplayer2.ui.PlayerView
 import com.guido.darkmovies.ui.theme.Blanco
 import com.guido.darkmovies.ui.theme.DarkmoviesTheme
 import com.guido.darkmovies.ui.theme.Gris
+import com.guido.darkmovies.ui.theme.GrisOscuro
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -286,7 +287,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                 Text(text = "Seasons: $temporadas", color = Blanco)
                                 Spacer(modifier = Modifier.height(8.dp))
                                 // Language selector
-                                LazyRow(Modifier.padding(vertical = 8.dp)) {
+                                LazyRow(Modifier.padding(vertical = 6.dp)) {
                                     items(series?.keys?.toList() ?: emptyList()) { language ->
                                         Button(
                                             onClick = {
@@ -319,6 +320,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                     Text(text = "Language: $language", color = Blanco)
                                 }
                                 Text(text = "Season $seasonNumber:", color = Blanco)
+                                Spacer(modifier = Modifier.height(4.dp))
                                 // Ordenar los episodios por número de episodio
                                 episodesMap.entries.sortedBy { it.key.toInt() }.forEach { (episodeNumber, episodeLink) ->
                                     val episodeKey = "$seasonNumber-$episodeNumber"
@@ -337,12 +339,34 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = if (lastClickedEpisode == episodeKey) Color.Green else Blanco
                                         ),
-                                        modifier = Modifier.width(200.dp),
+                                        modifier = Modifier.width(200.dp).height(40.dp),
                                         shape = RoundedCornerShape(5.dp)
                                     ) {
-                                        Text("Watch chapter $episodeNumber", color = Gris)
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.PlayArrow,
+                                                contentDescription = "Play icon",
+                                                modifier = Modifier.size(34.dp)
+                                                    .weight(1f) // Ocupa 1/4 del ancho
+                                                    .wrapContentWidth(Alignment.CenterHorizontally), // Centrado horizontalmente
+                                                tint = Gris
+                                            )
+                                            Spacer(modifier = Modifier.width(16.dp)) // Espacio entre el icono y el texto
+                                            Text(
+                                                text = episodeNumber,
+                                                color = Gris,
+                                                textAlign = TextAlign.Start, // Alinear el texto a la izquierda
+                                                modifier = Modifier.weight(1f) // Ocupa 3/4 del ancho
+                                            )
+                                        }
+                                        // Text("Watch chapter $episodeNumber", color = Gris)
                                     }
+                                    Spacer(modifier = Modifier.height(8.dp))
                                 }
+                                Spacer(modifier = Modifier.height(32.dp))
                             }
                         }
                     }
@@ -409,7 +433,7 @@ fun VideoScreen(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize().background(Gris),
+        modifier = Modifier.fillMaxSize().background(GrisOscuro),
         contentAlignment = Alignment.Center,
     ) {
         VideoPlayer(
