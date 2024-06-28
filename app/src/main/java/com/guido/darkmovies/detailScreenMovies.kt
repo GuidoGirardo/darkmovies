@@ -31,6 +31,7 @@ suspend fun detailScreenMovies(titulo: String): Any? {
             val portada = document.getString("portada")
             val temporadas = document.getLong("temporadas")?.toInt()
 
+
             if (temporadas != null && temporadas > 0) {
                 // Es una serie
                 val videos = document.get("videos") as? Map<String, Map<String, Map<String, String>>>

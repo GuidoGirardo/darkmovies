@@ -76,4 +76,6 @@ dependencies {
     implementation("com.google.firebase:firebase-storage")
     // glide
     implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
+    // exo player
+    implementation("com.google.android.exoplayer:exoplayer:2.18.0")
 }

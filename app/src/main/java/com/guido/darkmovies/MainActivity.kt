@@ -49,6 +49,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.ui.PlayerView
 import com.guido.darkmovies.ui.theme.Blanco
 import com.guido.darkmovies.ui.theme.DarkmoviesTheme
 import com.guido.darkmovies.ui.theme.Gris
@@ -63,7 +66,7 @@ class MainActivity : ComponentActivity() {
             hide(WindowInsetsCompat.Type.statusBars())
             hide(WindowInsetsCompat.Type.navigationBars())
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        } */
+        }*/
 
         setContent {
             DarkmoviesTheme {
@@ -304,6 +307,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                 }
 
                 // Show selected language's episodes
+                // Show selected language's episodes
                 selectedLanguage?.let { language ->
                     content.series?.get(language)?.forEach { (seasonNumber, episodesMap) ->
                         item {
@@ -315,7 +319,8 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                     Text(text = "Language: $language", color = Blanco)
                                 }
                                 Text(text = "Season $seasonNumber:", color = Blanco)
-                                episodesMap.forEach { (episodeNumber, episodeLink) ->
+                                // Ordenar los episodios por número de episodio
+                                episodesMap.entries.sortedBy { it.key.toInt() }.forEach { (episodeNumber, episodeLink) ->
                                     val episodeKey = "$seasonNumber-$episodeNumber"
                                     Button(
                                         onClick = {
@@ -404,8 +409,8 @@ fun VideoScreen(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.fillMaxSize().background(Gris),
+        contentAlignment = Alignment.Center,
     ) {
         VideoPlayer(
             context = context,
@@ -429,77 +434,67 @@ fun VideoPlayer(
     isSeries: Boolean,
     episodeKey: String,
     seasonNumber: String,
-    windowInsetsController: WindowInsetsControllerCompat? // Agregamos el controlador de insets como parámetro
+    windowInsetsController: WindowInsetsControllerCompat?
 ) {
-    val mediaController = remember { MediaController(context) }
-
-    // A variable to store the VideoView instance
-    var videoViewInstance: VideoView? by remember { mutableStateOf(null) }
-
-    // LaunchedEffect to periodically save video position
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(10000L) // 10 seconds delay
-            videoViewInstance?.let { videoView ->
-                videoPlayerState.currentPosition = videoView.currentPosition
-                val sharedPreferences = context.getSharedPreferences("video_position", Context.MODE_PRIVATE)
-                with(sharedPreferences.edit()) {
-                    putInt(getVideoPositionKey(titulo, isSeries, seasonNumber, episodeKey), videoPlayerState.currentPosition)
-                    apply()
-                    Log.i("sppp", "$titulo $seasonNumber $episodeKey ${videoPlayerState.currentPosition}")
-                }
-            }
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context).build().apply {
+            val mediaItem = MediaItem.fromUri(videos)
+            setMediaItem(mediaItem)
+            prepare()
+            playWhenReady = true
+            seekTo(videoPlayerState.currentPosition.toLong())
         }
     }
 
-    AndroidView(
-        factory = { ctx ->
-            VideoView(ctx).apply {
-                setVideoPath(videos)
-                setMediaController(mediaController)
-                setOnPreparedListener { mediaPlayer ->
-                    mediaPlayer.seekTo(videoPlayerState.currentPosition)
-                    start()
-                }
-
-                // Assign the VideoView instance to the variable
-                videoViewInstance = this
-
-                setOnTouchListener { _, motionEvent ->
-                    when (motionEvent.action) {
-                        MotionEvent.ACTION_DOWN -> {
-                            // Ocultar los botones de navegación al tocar la pantalla
-                            windowInsetsController?.run {
-                                hide(WindowInsetsCompat.Type.systemBars())
-                            }
-                            false
-                        }
-                        else -> false
-                    }
-                }
-
-                setOnKeyListener { _, keyCode, _ ->
-                    when (keyCode) {
-                        KeyEvent.KEYCODE_BACK -> {
-                            videoPlayerState.currentPosition = currentPosition
-                            false
-                        }
-                        else -> false
-                    }
-                }
-            }
-        },
-        update = { view ->
-            view.setOnPreparedListener { mediaPlayer ->
-                mediaPlayer.seekTo(videoPlayerState.currentPosition)
-                mediaPlayer.start()
-            }
+    LaunchedEffect(Unit) {
+        // Hide the system bars initially
+        windowInsetsController?.run {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
-    )
+    }
 
-    DisposableEffect(Unit) {
+    DisposableEffect(
+        AndroidView(
+            factory = {
+                PlayerView(context).apply {
+                    player = exoPlayer
+                    useController = true
+                    setOnTouchListener { _, motionEvent ->
+                        when (motionEvent.action) {
+                            MotionEvent.ACTION_DOWN -> {
+                                // Hide the system bars when the player is touched
+                                windowInsetsController?.run {
+                                    hide(WindowInsetsCompat.Type.systemBars())
+                                }
+                                false
+                            }
+                            else -> false
+                        }
+                    }
+                }
+            },
+            update = {
+                it.player = exoPlayer
+            }
+        )
+    ) {
         onDispose {
-            videoViewInstance?.stopPlayback()
+            videoPlayerState.currentPosition = exoPlayer.currentPosition.toInt()
+            exoPlayer.release()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(10000L)
+            videoPlayerState.currentPosition = exoPlayer.currentPosition.toInt()
+            val sharedPreferences = context.getSharedPreferences("video_position", Context.MODE_PRIVATE)
+            with(sharedPreferences.edit()) {
+                putInt(getVideoPositionKey(titulo, isSeries, seasonNumber, episodeKey), videoPlayerState.currentPosition)
+                apply()
+                Log.i("sppp", "$titulo $seasonNumber $episodeKey ${videoPlayerState.currentPosition}")
+            }
         }
     }
 }
