@@ -77,5 +77,6 @@ dependencies {
     // glide
     implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
     // exo player
-    implementation("com.google.android.exoplayer:exoplayer:2.18.0")
+    implementation("com.google.android.exoplayer:exoplayer:2.19.1")
+    implementation("com.google.android.exoplayer:exoplayer-ui:2.19.1")
 }
