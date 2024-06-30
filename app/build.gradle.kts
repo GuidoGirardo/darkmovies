@@ -78,4 +78,10 @@ dependencies {
     implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
     // exo player
     implementation("com.google.android.exoplayer:exoplayer:2.18.0")
+    // media 3 exo player
+    /* implementation("androidx.media3:media3-exoplayer:1.3.1")
+    implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.3.1")
+    implementation("androidx.media3:media3-exoplayer-rtsp:1.3.1")
+    implementation("androidx.media3:media3-ui:1.0.0") */
 }
