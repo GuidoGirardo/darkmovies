@@ -172,31 +172,46 @@ fun MainScreen(navController: NavHostController, context: Context) {
                 Spacer(modifier = Modifier.width(8.dp))
             }
         }
-        Spacer(modifier = Modifier.height(20.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4)
-        ) {
-            val filteredMovies = movies.filter {
-                it.titulo.contains(searchTerm.value.text, ignoreCase = true)
-            }
-            items(filteredMovies) { movie ->
-                Column(
-                    modifier = Modifier.clickable {
-                        incrementGlobalCounter(context)
-                        navController.navigate("detail_screen/${movie.titulo}")
-                    }
-                ) {
-                    GlideImage(
-                        model = movie.portada,
-                        contentDescription = "portada",
-                        modifier = Modifier
-                            .width(100.dp)
-                            .height(160.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        contentScale = ContentScale.Crop
+        Spacer(modifier = Modifier.height(14.dp))
+
+        val groupedMovies = movies.filter {
+            it.titulo.contains(searchTerm.value.text, ignoreCase = true)
+        }.groupBy { it.categoria }
+
+        LazyColumn(modifier = Modifier.fillMaxSize().background(Color.Red)) {
+            groupedMovies.forEach { (categoria, moviesInCategory) ->
+                item {
+                    Text(
+                        text = categoria,
+                        modifier = Modifier.padding(start = 8.dp),
+                        color = Blanco
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                items(moviesInCategory.chunked(4)) { rowItems ->
+                    Row(modifier = Modifier.padding(horizontal = 8.dp)) {
+                        rowItems.forEach { movie ->
+                            Column(
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .clickable {
+                                        incrementGlobalCounter(context)
+                                        navController.navigate("detail_screen/${movie.titulo}")
+                                    }
+                            ) {
+                                GlideImage(
+                                    model = movie.portada,
+                                    contentDescription = "portada",
+                                    modifier = Modifier
+                                        .width(90.dp)
+                                        .height(150.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
