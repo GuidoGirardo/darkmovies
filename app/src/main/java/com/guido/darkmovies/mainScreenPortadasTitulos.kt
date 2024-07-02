@@ -5,7 +5,8 @@ import kotlinx.coroutines.tasks.await
 
 data class MoviesMainScreen(
     val titulo: String = "",
-    val portada: String = ""
+    val portada: String = "",
+    val categoria: String = ""
 )
 
 suspend fun mainScreenPortadasTitulos(movies: MutableList<MoviesMainScreen>) {
@@ -15,7 +16,8 @@ suspend fun mainScreenPortadasTitulos(movies: MutableList<MoviesMainScreen>) {
         for (document in result) {
             val titulo = document.getString("titulo") ?: ""
             val portada = document.getString("portada") ?: ""
-            movies.add(MoviesMainScreen(titulo, portada))
+            val categoria = document.getString("categoria") ?: ""
+            movies.add(MoviesMainScreen(titulo, portada, categoria))
         }
     } catch (e: Exception) {
         // manejar error

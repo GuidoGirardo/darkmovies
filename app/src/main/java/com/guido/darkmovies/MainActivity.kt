@@ -1,6 +1,7 @@
 package com.guido.darkmovies
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("titulo") { defaultValue = "" })
                         ) { backStackEntry ->
                             DetailScreen(
+                                context,
                                 navController,
                                 backStackEntry.arguments?.getString("titulo") ?: ""
                             )
@@ -153,6 +155,7 @@ fun MainScreen(navController: NavHostController, context: Context) {
             items(moviesVistas) { movie ->
                 Column(
                     modifier = Modifier.clickable {
+                        incrementGlobalCounter(context)
                         navController.navigate("detail_screen/${movie.titulo}")
                     }
                 ) {
@@ -179,6 +182,7 @@ fun MainScreen(navController: NavHostController, context: Context) {
             items(filteredMovies) { movie ->
                 Column(
                     modifier = Modifier.clickable {
+                        incrementGlobalCounter(context)
                         navController.navigate("detail_screen/${movie.titulo}")
                     }
                 ) {
@@ -198,9 +202,31 @@ fun MainScreen(navController: NavHostController, context: Context) {
     }
 }
 
+private fun incrementGlobalCounter(context: Context) {
+    val currentCount = context.getSharedPreferences("global_counterr", Context.MODE_PRIVATE)
+        .getInt("global_count", 0)
+    Log.i("Contador", currentCount.toString())
+    if (currentCount < 4) {
+        with(context.getSharedPreferences("global_counterr", Context.MODE_PRIVATE).edit()) {
+            putInt("global_count", currentCount + 1)
+            apply()
+        }
+        if (currentCount + 1 == 4) {
+            Log.i("Contador", "El contador ha alcanzado 4 en MainScreen")
+            with(context.getSharedPreferences("global_counterr", Context.MODE_PRIVATE).edit()) {
+                putInt("global_count", 0)
+                apply()
+            }
+            val url = "https://www.highrevenuenetwork.com/ef379y53x?key=33fea0a311f5a616b4844d9304fb1f1d"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            context.startActivity(intent)
+        }
+    }
+}
+
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun DetailScreen(navController: NavHostController, titulo: String) {
+fun DetailScreen(context: Context, navController: NavHostController, titulo: String) {
     val detail = remember { mutableStateOf<Any?>(null) }
     var selectedLanguage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
@@ -243,6 +269,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                 videos?.forEach { (key, value) ->
                                     Button(
                                         onClick = {
+                                            incrementGlobalCounter(context)
                                             navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0/0")
                                             val sharedPreferences = context.getSharedPreferences("last_watched_prefs", Context.MODE_PRIVATE)
                                             with(sharedPreferences.edit()) {
@@ -251,7 +278,9 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                             }
                                         },
                                         colors = ButtonDefaults.buttonColors(containerColor = Blanco),
-                                        modifier = Modifier.width(200.dp).height(40.dp),
+                                        modifier = Modifier
+                                            .width(200.dp)
+                                            .height(40.dp),
                                         shape = RoundedCornerShape(5.dp)
                                     ) {
                                         Row(
@@ -261,7 +290,8 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                             Icon(
                                                 imageVector = Icons.Default.PlayArrow,
                                                 contentDescription = "Play icon",
-                                                modifier = Modifier.size(34.dp)
+                                                modifier = Modifier
+                                                    .size(34.dp)
                                                     .weight(1f) // Ocupa 1/4 del ancho
                                                     .wrapContentWidth(Alignment.CenterHorizontally), // Centrado horizontalmente
                                                 tint = Gris
@@ -315,6 +345,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                     items(series?.keys?.toList() ?: emptyList()) { language ->
                                         Button(
                                             onClick = {
+                                                incrementGlobalCounter(context)
                                                 selectedLanguage = language
                                             },
                                             colors = ButtonDefaults.buttonColors(containerColor = Blanco),
@@ -350,6 +381,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                     val episodeKey = "$seasonNumber-$episodeNumber"
                                     Button(
                                         onClick = {
+                                            incrementGlobalCounter(context)
                                             navController.navigate(
                                                 "video_screen/${Uri.encode(episodeLink)}/$titulo/true/$seasonNumber/$episodeNumber"
                                             )
@@ -368,7 +400,9 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = if (lastClickedEpisode == episodeKey) Color.Green else Blanco
                                         ),
-                                        modifier = Modifier.width(200.dp).height(40.dp),
+                                        modifier = Modifier
+                                            .width(200.dp)
+                                            .height(40.dp),
                                         shape = RoundedCornerShape(5.dp)
                                     ) {
                                         Row(
@@ -378,7 +412,8 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                             Icon(
                                                 imageVector = Icons.Default.PlayArrow,
                                                 contentDescription = "Play icon",
-                                                modifier = Modifier.size(34.dp)
+                                                modifier = Modifier
+                                                    .size(34.dp)
                                                     .weight(1f) // Ocupa 1/4 del ancho
                                                     .wrapContentWidth(Alignment.CenterHorizontally), // Centrado horizontalmente
                                                 tint = Gris
@@ -462,7 +497,9 @@ fun VideoScreen(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize().background(GrisOscuro),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(GrisOscuro),
         contentAlignment = Alignment.Center,
     ) {
         VideoPlayer(
