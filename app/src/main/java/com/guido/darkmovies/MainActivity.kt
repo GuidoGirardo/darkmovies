@@ -279,7 +279,7 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(text = titulo, color = Blanco, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(text = descripcion ?: "", color = Blanco)
+                                Text(text = descripcion ?: "", color = Blanco, modifier = Modifier.padding(horizontal = 35.dp))
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(text = "Seasons: $temporadas", color = Blanco)
                                 Spacer(modifier = Modifier.height(8.dp))
