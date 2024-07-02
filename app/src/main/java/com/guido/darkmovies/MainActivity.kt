@@ -207,6 +207,7 @@ fun MainScreen(navController: NavHostController, context: Context) {
                                         .height(150.dp)
                                         .clip(RoundedCornerShape(4.dp)),
                                     contentScale = ContentScale.Crop
+
                                 )
                             }
                         }
