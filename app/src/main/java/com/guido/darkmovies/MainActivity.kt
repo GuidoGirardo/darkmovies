@@ -172,24 +172,25 @@ fun MainScreen(navController: NavHostController, context: Context) {
                 Spacer(modifier = Modifier.width(8.dp))
             }
         }
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         val groupedMovies = movies.filter {
             it.titulo.contains(searchTerm.value.text, ignoreCase = true)
         }.groupBy { it.categoria }
 
-        LazyColumn(modifier = Modifier.fillMaxSize().background(Color.Red)) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
             groupedMovies.forEach { (categoria, moviesInCategory) ->
                 item {
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = categoria,
-                        modifier = Modifier.padding(start = 8.dp),
+                        modifier = Modifier.padding(start = 4.dp),
                         color = Blanco
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
                 items(moviesInCategory.chunked(4)) { rowItems ->
-                    Row(modifier = Modifier.padding(horizontal = 8.dp)) {
+                    Row(modifier = Modifier.padding(horizontal = 4.dp)) {
                         rowItems.forEach { movie ->
                             Column(
                                 modifier = Modifier
