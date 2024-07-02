@@ -208,7 +208,7 @@ fun MainScreen(navController: NavHostController, context: Context) {
                         Column(
                             modifier = Modifier
                                 .weight(1f)
-                                .padding(4.dp)
+                                .padding(2.dp)
                                 .clip(RoundedCornerShape(4.dp))
                                 .clickable {
                                     incrementGlobalCounter(context)
