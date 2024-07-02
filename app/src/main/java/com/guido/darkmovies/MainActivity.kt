@@ -13,6 +13,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -153,7 +156,9 @@ fun MainScreen(navController: NavHostController, context: Context) {
             }
         }
         Spacer(modifier = Modifier.height(20.dp))
-        LazyRow(modifier = Modifier.padding(start = 8.dp)) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4)
+        ) {
             val filteredMovies = movies.filter {
                 it.titulo.contains(searchTerm.value.text, ignoreCase = true)
             }
@@ -166,7 +171,10 @@ fun MainScreen(navController: NavHostController, context: Context) {
                     GlideImage(
                         model = movie.portada,
                         contentDescription = "portada",
-                        modifier = Modifier.width(100.dp).height(160.dp).clip(RoundedCornerShape(4.dp)),
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(160.dp)
+                            .clip(RoundedCornerShape(4.dp)),
                         contentScale = ContentScale.Crop
                     )
                 }
