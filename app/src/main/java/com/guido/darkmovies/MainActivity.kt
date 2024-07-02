@@ -135,82 +135,99 @@ fun MainScreen(navController: NavHostController, context: Context) {
             .getLong("${it.titulo}-lastWatched", 0L)
     }
 
-    Column(modifier = Modifier.background(Gris)) {
-        TextField(
-            value = searchTerm.value,
-            onValueChange = { searchTerm.value = it },
-            label = { Text("Search by movie title") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-        if (moviesVistas.isNotEmpty()) {
-            Text(
-                "Continue watching :)",
-                modifier = Modifier.padding(start = 8.dp),
-                color = Blanco
+    LazyColumn(modifier = Modifier.background(Gris).fillMaxSize()) {
+        item {
+            TextField(
+                value = searchTerm.value,
+                onValueChange = { searchTerm.value = it },
+                label = { Text("Search by movie title") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
             )
+            Spacer(modifier = Modifier.height(10.dp))
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        LazyRow(modifier = Modifier.padding(start = 8.dp)) {
-            items(moviesVistas) { movie ->
-                Column(
-                    modifier = Modifier.clickable {
-                        incrementGlobalCounter(context)
-                        navController.navigate("detail_screen/${movie.titulo}")
+
+        if (moviesVistas.isNotEmpty()) {
+            item {
+                Text(
+                    "Continue watching :)",
+                    modifier = Modifier.padding(start = 8.dp),
+                    color = Blanco
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            item {
+                LazyRow(modifier = Modifier.padding(start = 8.dp)) {
+                    items(moviesVistas) { movie ->
+                        Column(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(160.dp)
+                                .clickable {
+                                    incrementGlobalCounter(context)
+                                    navController.navigate("detail_screen/${movie.titulo}")
+                                }
+                        ) {
+                            GlideImage(
+                                model = movie.portada,
+                                contentDescription = "portada",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(2.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
-                ) {
-                    GlideImage(
-                        model = movie.portada,
-                        contentDescription = "portada",
-                        modifier = Modifier
-                            .width(100.dp)
-                            .height(160.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        contentScale = ContentScale.Crop
-                    )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
             }
         }
-        Spacer(modifier = Modifier.height(4.dp))
 
         val groupedMovies = movies.filter {
             it.titulo.contains(searchTerm.value.text, ignoreCase = true)
         }.groupBy { it.categoria }
 
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            groupedMovies.forEach { (categoria, moviesInCategory) ->
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = categoria,
-                        modifier = Modifier.padding(start = 4.dp),
-                        color = Blanco
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-                items(moviesInCategory.chunked(4)) { rowItems ->
-                    Row(modifier = Modifier.padding(horizontal = 4.dp)) {
-                        rowItems.forEach { movie ->
-                            Column(
+        groupedMovies.forEach { (categoria, moviesInCategory) ->
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = categoria,
+                    modifier = Modifier.padding(start = 8.dp),
+                    color = Blanco
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            items(moviesInCategory.chunked(4)) { rowItems ->
+                Row(modifier = Modifier.padding(horizontal = 4.dp)) {
+                    rowItems.forEach { movie ->
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(4.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable {
+                                    incrementGlobalCounter(context)
+                                    navController.navigate("detail_screen/${movie.titulo}")
+                                }
+                        ) {
+                            GlideImage(
+                                model = movie.portada,
+                                contentDescription = "portada",
                                 modifier = Modifier
-                                    .padding(4.dp)
-                                    .clickable {
-                                        incrementGlobalCounter(context)
-                                        navController.navigate("detail_screen/${movie.titulo}")
-                                    }
-                            ) {
-                                GlideImage(
-                                    model = movie.portada,
-                                    contentDescription = "portada",
-                                    modifier = Modifier
-                                        .width(90.dp)
-                                        .height(150.dp)
-                                        .clip(RoundedCornerShape(4.dp)),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
+                                    .width(90.dp)
+                                    .height(150.dp),
+                                contentScale = ContentScale.Crop
+                            )
                         }
+                    }
+                    // Agregar celdas invisibles para completar la fila
+                    repeat(4 - rowItems.size) {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }
