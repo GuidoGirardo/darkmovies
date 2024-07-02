@@ -118,13 +118,21 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun MainScreen(navController: NavHostController, context: Context) {
-    val movies = remember { mutableStateListOf<MoviesMainScreen>() }
     val moviesVistas = remember { mutableStateListOf<MovieWithTitleAndPortada>() }
     val searchTerm = remember { mutableStateOf(TextFieldValue()) }
+    val movies = remember { mutableStateListOf<MoviesMainScreen>() }
+
     LaunchedEffect(Unit) {
         mainScreenPortadasTitulos(movies)
         fetchMoviesFromFirestoreByTitles(context, moviesVistas)
     }
+
+    // Ordenar las películas vistas por última vez
+    moviesVistas.sortByDescending {
+        context.getSharedPreferences("last_watched_prefs", Context.MODE_PRIVATE)
+            .getLong("${it.titulo}-lastWatched", 0L)
+    }
+
     Column(modifier = Modifier.background(Gris)) {
         TextField(
             value = searchTerm.value,
@@ -133,9 +141,12 @@ fun MainScreen(navController: NavHostController, context: Context) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(10.dp))
-        if(moviesVistas.isNotEmpty()){
-            Text("Continue watching :)", modifier = Modifier.padding(start = 8.dp),
-                color = Blanco)
+        if (moviesVistas.isNotEmpty()) {
+            Text(
+                "Continue watching :)",
+                modifier = Modifier.padding(start = 8.dp),
+                color = Blanco
+            )
         }
         Spacer(modifier = Modifier.height(4.dp))
         LazyRow(modifier = Modifier.padding(start = 8.dp)) {
@@ -148,7 +159,10 @@ fun MainScreen(navController: NavHostController, context: Context) {
                     GlideImage(
                         model = movie.portada,
                         contentDescription = "portada",
-                        modifier = Modifier.width(100.dp).height(160.dp).clip(RoundedCornerShape(4.dp)),
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(160.dp)
+                            .clip(RoundedCornerShape(4.dp)),
                         contentScale = ContentScale.Crop
                     )
                 }
@@ -230,6 +244,11 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                     Button(
                                         onClick = {
                                             navController.navigate("video_screen/${Uri.encode(value)}/$titulo/false/0/0")
+                                            val sharedPreferences = context.getSharedPreferences("last_watched_prefs", Context.MODE_PRIVATE)
+                                            with(sharedPreferences.edit()) {
+                                                putLong("${titulo}-lastWatched", System.currentTimeMillis())
+                                                apply()
+                                            }
                                         },
                                         colors = ButtonDefaults.buttonColors(containerColor = Blanco),
                                         modifier = Modifier.width(200.dp).height(40.dp),
@@ -334,6 +353,11 @@ fun DetailScreen(navController: NavHostController, titulo: String) {
                                             navController.navigate(
                                                 "video_screen/${Uri.encode(episodeLink)}/$titulo/true/$seasonNumber/$episodeNumber"
                                             )
+                                            val sharedPreferences = context.getSharedPreferences("last_watched_prefs", Context.MODE_PRIVATE)
+                                            with(sharedPreferences.edit()) {
+                                                putLong("${titulo}-lastWatched", System.currentTimeMillis())
+                                                apply()
+                                            }
                                             // Update last clicked episode
                                             lastClickedEpisode = episodeKey
                                             with(sharedPreferences.edit()) {
